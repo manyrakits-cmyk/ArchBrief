@@ -1,0 +1,13 @@
+# Výstupní soubory
+output_model.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Prostředí a secrets
+.env
+*.env
