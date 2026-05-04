@@ -209,7 +209,9 @@ def call_agent(
         lines = raw.splitlines()
         raw = "\n".join(lines[1:-1]).strip()
 
-    return json.loads(raw)
+    # raw_decode přečte první platný JSON a ignoruje případný trailing text
+    parsed, _ = json.JSONDecoder().raw_decode(raw)
+    return parsed
 
 
 # ── Zobrazení modelu v terminálu ──────────────────────────────────────────────

@@ -51,14 +51,17 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, message: text }),
       })
-      if (!res.ok) throw new Error('Chyba serveru')
-      const data = await res.json() as { assistant_message: string; intent_model: IntentModel }
-      setMessages(prev => [...prev, { role: 'assistant', content: data.assistant_message }])
-      setIntentModel(data.intent_model)
-    } catch {
+      const data = await res.json() as { assistant_message?: string; intent_model?: IntentModel; error?: string }
+      if (!res.ok || data.error) {
+        throw new Error(data.error ?? `HTTP ${res.status}`)
+      }
+      setMessages(prev => [...prev, { role: 'assistant', content: data.assistant_message ?? '' }])
+      setIntentModel(data.intent_model ?? {})
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Neznámá chyba'
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: '⚠️ Chyba komunikace se serverem.' },
+        { role: 'assistant', content: `⚠️ Chyba: ${msg}` },
       ])
     } finally {
       setIsLoading(false)
