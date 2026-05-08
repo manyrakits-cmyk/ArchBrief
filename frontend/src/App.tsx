@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
+import { supabase } from './supabase'
+import AuthForm from './components/AuthForm'
+import ProjectList from './components/ProjectList'
 import ChatPanel from './components/ChatPanel'
 import ModelPanel from './components/ModelPanel'
+import { LogOut, ChevronLeft } from 'lucide-react'
 
 const API = 'http://localhost:5000'
 
@@ -11,34 +16,118 @@ export interface Message {
 
 export type IntentModel = Record<string, unknown>
 
+type View = 'auth' | 'projects' | 'chat'
+
 export default function App() {
+  const [user, setUser] = useState<User | null>(null)
+  const [authToken, setAuthToken] = useState<string>('')
+  const [view, setView] = useState<View>('auth')
+
+  // Chat state
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [intentModel, setIntentModel] = useState<IntentModel>({})
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [projectName, setProjectName] = useState<string>('Nový projekt')
 
+  // Auth listener
   useEffect(() => {
-    void initSession()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser(session.user)
+        setAuthToken(session.access_token)
+        setView('projects')
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUser(session.user)
+        setAuthToken(session.access_token)
+        setView('projects')
+      } else {
+        setUser(null)
+        setAuthToken('')
+        setView('auth')
+        resetChat()
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  async function initSession() {
-    setError(null)
+  function resetChat() {
+    setSessionId(null)
+    setMessages([])
+    setIntentModel({})
+    setProjectName('Nový projekt')
+  }
+
+  async function authHeaders() {
+    // Refresh token pokud vyprší
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token ?? authToken
+    return {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    }
+  }
+
+  // Nový projekt — zavolá backend, dostane první zprávu agenta
+  async function handleNewProject(name = 'Nový projekt') {
     setIsLoading(true)
+    resetChat()
     try {
-      const res = await fetch(`${API}/api/session/new`, { method: 'POST' })
-      if (!res.ok) throw new Error('Server vrátil chybu')
-      const data = await res.json() as { session_id: string; assistant_message: string; intent_model: IntentModel }
+      const headers = await authHeaders()
+      const res = await fetch(`${API}/api/session/new`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ project_name: name }),
+      })
+      const data = await res.json() as {
+        session_id: string
+        assistant_message: string
+        intent_model: IntentModel
+        error?: string
+      }
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
       setSessionId(data.session_id)
       setIntentModel(data.intent_model)
       setMessages([{ role: 'assistant', content: data.assistant_message }])
-    } catch {
-      setError('Nelze se připojit k backendu. Spusťte Flask server na portu 5000.')
+      setProjectName(name)
+      setView('chat')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Chyba při vytváření projektu')
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Otevření existujícího projektu — obnoví konverzaci ze Supabase
+  async function handleOpenProject(sid: string) {
+    setIsLoading(true)
+    resetChat()
+    try {
+      const headers = await authHeaders()
+      const res = await fetch(`${API}/api/session/${sid}`, { headers })
+      const data = await res.json() as {
+        intent_model: IntentModel
+        messages: Message[]
+        error?: string
+      }
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
+      setSessionId(sid)
+      setIntentModel(data.intent_model)
+      setMessages(data.messages ?? [])
+      setView('chat')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Chyba při načítání projektu')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Odeslání zprávy v chatu
   async function sendMessage(text: string) {
     if (!sessionId || !text.trim() || isLoading) return
 
@@ -46,51 +135,69 @@ export default function App() {
     setIsLoading(true)
 
     try {
+      const headers = await authHeaders()
       const res = await fetch(`${API}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ session_id: sessionId, message: text }),
       })
-      const data = await res.json() as { assistant_message?: string; intent_model?: IntentModel; error?: string }
-      if (!res.ok || data.error) {
-        throw new Error(data.error ?? `HTTP ${res.status}`)
+      const data = await res.json() as {
+        assistant_message?: string
+        intent_model?: IntentModel
+        error?: string
       }
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
       setMessages(prev => [...prev, { role: 'assistant', content: data.assistant_message ?? '' }])
       setIntentModel(data.intent_model ?? {})
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Neznámá chyba'
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: `⚠️ Chyba: ${msg}` },
-      ])
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ Chyba: ${msg}` }])
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (error) {
+  // ── Views ─────────────────────────────────────────────────────────────────
+
+  if (view === 'auth') {
+    return <AuthForm />
+  }
+
+  if (view === 'projects') {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-sm border max-w-sm">
-          <p className="text-red-500 font-medium mb-3">{error}</p>
-          <button
-            onClick={() => void initSession()}
-            className="text-sm text-[#1D9E75] hover:underline"
-          >
-            Zkusit znovu
-          </button>
-        </div>
-      </div>
+      <ProjectList
+        user={user!}
+        authToken={authToken}
+        onOpenProject={handleOpenProject}
+        onNewProject={() => void handleNewProject()}
+      />
     )
   }
 
+  // view === 'chat'
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b px-6 py-3 flex items-center gap-2.5 shrink-0">
-        <div className="w-2 h-2 rounded-full bg-[#1D9E75]" />
-        <h1 className="font-semibold text-gray-800 text-sm tracking-wide">ArchBrief</h1>
-        <span className="text-xs text-gray-400 ml-auto">Konverzační asistent architekta</span>
+      <header className="bg-white border-b px-4 py-3 flex items-center gap-3 shrink-0">
+        <button
+          onClick={() => setView('projects')}
+          className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition"
+        >
+          <ChevronLeft size={16} />
+          Projekty
+        </button>
+        <div className="w-px h-4 bg-gray-200" />
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#1D9E75]" />
+          <span className="font-semibold text-gray-800 text-sm">{projectName}</span>
+        </div>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="ml-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition"
+        >
+          <LogOut size={13} />
+          Odhlásit
+        </button>
       </header>
 
       {/* Panels */}
