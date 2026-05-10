@@ -169,7 +169,7 @@ export default function App() {
         user={user!}
         authToken={authToken}
         onOpenProject={handleOpenProject}
-        onNewProject={() => void handleNewProject()}
+        onNewProject={(name) => void handleNewProject(name)}
       />
     )
   }

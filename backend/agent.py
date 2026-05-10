@@ -160,6 +160,14 @@ def get_user_projects(user_id: str) -> list:
     return result
 
 
+def rename_project(project_id: str, name: str) -> None:
+    """Přejmenuje projekt."""
+    get_supabase().table("projects").update({
+        "name": name,
+        "updated_at": _now(),
+    }).eq("id", project_id).execute()
+
+
 def get_session(session_id: str) -> dict:
     """
     Načte session ze Supabase a extrahuje čitelnou historii konverzace.
