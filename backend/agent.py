@@ -18,6 +18,7 @@ import anthropic
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from archbrief_cli import EMPTY_MODEL, apply_patch, call_agent  # noqa: E402
 from supabase_client import get_supabase
+from image_generator import build_image_prompt, generate_image
 
 _client = anthropic.Anthropic()
 _INIT_TRIGGER = "Zahájení rozhovoru. Představ se a polož první otázku."
@@ -168,6 +169,36 @@ def rename_project(project_id: str, name: str) -> None:
     }).eq("id", project_id).execute()
 
 
+def generate_and_save_image(session_id: str, reference_image_url: str | None = None) -> dict:
+    """
+    Sestaví prompt z intent_model, vygeneruje obrázek přes fal.ai a uloží do Supabase.
+
+    Returns:
+        dict: image_url, prompt_used
+    """
+    sb = get_supabase()
+
+    # 1. Načíst intent_model ze session
+    result = sb.table("sessions").select("intent_model").eq("id", session_id).execute()
+    if not result.data:
+        raise KeyError(f"Session '{session_id}' nenalezena")
+
+    intent_model = result.data[0]["intent_model"]
+
+    # 2. Sestavit prompt a vygenerovat obrázek
+    prompt = build_image_prompt(intent_model)
+    image_url = generate_image(prompt, reference_image_url)
+
+    # 3. Uložit výsledek do Supabase
+    sb.table("sessions").update({
+        "generated_image_url": image_url,
+        "image_prompt": prompt,
+        "updated_at": _now(),
+    }).eq("id", session_id).execute()
+
+    return {"image_url": image_url, "prompt_used": prompt}
+
+
 def get_session(session_id: str) -> dict:
     """
     Načte session ze Supabase a extrahuje čitelnou historii konverzace.
@@ -203,4 +234,6 @@ def get_session(session_id: str) -> dict:
         "intent_model": row["intent_model"],
         "project_id": row["project_id"],
         "messages": messages,
+        "generated_image_url": row.get("generated_image_url"),
+        "image_prompt": row.get("image_prompt"),
     }

@@ -15,7 +15,7 @@ load_dotenv()  # načíst .env před importem modulů používajících env prom
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from agent import create_session, process_message, get_user_projects, get_session, rename_project
+from agent import create_session, process_message, get_user_projects, get_session, rename_project, generate_and_save_image
 from supabase_client import get_supabase
 
 app = Flask(__name__)
@@ -94,6 +94,25 @@ def get_session_endpoint(session_id: str):
     try:
         data = get_session(session_id)
         return jsonify(data)
+    except KeyError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/generate-image", methods=["POST"])
+def generate_image_endpoint():
+    _, auth_err = _require_auth()
+    if auth_err:
+        return jsonify({"error": auth_err[0]}), auth_err[1]
+    try:
+        data = request.get_json(force=True) or {}
+        session_id = (data.get("session_id") or "").strip()
+        reference_url = data.get("reference_image_url") or None
+        if not session_id:
+            return jsonify({"error": "session_id je povinný"}), 400
+        result = generate_and_save_image(session_id, reference_url)
+        return jsonify(result)
     except KeyError as exc:
         return jsonify({"error": str(exc)}), 404
     except Exception as exc:

@@ -30,6 +30,11 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [projectName, setProjectName] = useState<string>('Nový projekt')
 
+  // Image state
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
+  const [imagePrompt, setImagePrompt] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+
   // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,6 +66,8 @@ export default function App() {
     setMessages([])
     setIntentModel({})
     setProjectName('Nový projekt')
+    setGeneratedImageUrl(null)
+    setImagePrompt(null)
   }
 
   async function authHeaders() {
@@ -119,11 +126,34 @@ export default function App() {
       setSessionId(sid)
       setIntentModel(data.intent_model)
       setMessages(data.messages ?? [])
+      setGeneratedImageUrl((data as Record<string, unknown>).generated_image_url as string ?? null)
+      setImagePrompt((data as Record<string, unknown>).image_prompt as string ?? null)
       setView('chat')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Chyba při načítání projektu')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function generateImage(referenceUrl?: string) {
+    if (!sessionId || isGenerating) return
+    setIsGenerating(true)
+    try {
+      const headers = await authHeaders()
+      const res = await fetch(`${API}/api/generate-image`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ session_id: sessionId, reference_image_url: referenceUrl ?? null }),
+      })
+      const data = await res.json() as { image_url?: string; prompt_used?: string; error?: string }
+      if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
+      setGeneratedImageUrl(data.image_url ?? null)
+      setImagePrompt(data.prompt_used ?? null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Chyba při generování obrázku')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -206,7 +236,13 @@ export default function App() {
           <ChatPanel messages={messages} onSend={sendMessage} isLoading={isLoading} />
         </div>
         <div className="w-[40%]">
-          <ModelPanel model={intentModel} />
+          <ModelPanel
+            model={intentModel}
+            generatedImageUrl={generatedImageUrl}
+            imagePrompt={imagePrompt}
+            isGenerating={isGenerating}
+            onGenerate={generateImage}
+          />
         </div>
       </div>
     </div>
