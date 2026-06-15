@@ -35,6 +35,9 @@ export default function App() {
   const [imagePrompt, setImagePrompt] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
+  // Floorplan state
+  const [floorplanSvg, setFloorplanSvg] = useState<string | null>(null)
+
   // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -68,6 +71,7 @@ export default function App() {
     setProjectName('Nový projekt')
     setGeneratedImageUrl(null)
     setImagePrompt(null)
+    setFloorplanSvg(null)
   }
 
   async function authHeaders() {
@@ -128,6 +132,7 @@ export default function App() {
       setMessages(data.messages ?? [])
       setGeneratedImageUrl((data as Record<string, unknown>).generated_image_url as string ?? null)
       setImagePrompt((data as Record<string, unknown>).image_prompt as string ?? null)
+      setFloorplanSvg((data as Record<string, unknown>).floorplan_svg as string ?? null)
       setView('chat')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Chyba při načítání projektu')
@@ -157,6 +162,19 @@ export default function App() {
     }
   }
 
+  async function fetchFloorplan(sid: string) {
+    try {
+      const headers = await authHeaders()
+      const res = await fetch(`${API}/api/floorplan-svg`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ session_id: sid }),
+      })
+      const data = await res.json() as { svg?: string; error?: string }
+      if (res.ok && !data.error && data.svg) setFloorplanSvg(data.svg)
+    } catch { /* non-fatal */ }
+  }
+
   // Odeslání zprávy v chatu
   async function sendMessage(text: string) {
     if (!sessionId || !text.trim() || isLoading) return
@@ -179,6 +197,7 @@ export default function App() {
       if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
       setMessages(prev => [...prev, { role: 'assistant', content: data.assistant_message ?? '' }])
       setIntentModel(data.intent_model ?? {})
+      if (sessionId) void fetchFloorplan(sessionId)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Neznámá chyba'
       setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ Chyba: ${msg}` }])
@@ -242,6 +261,7 @@ export default function App() {
             imagePrompt={imagePrompt}
             isGenerating={isGenerating}
             onGenerate={generateImage}
+            floorplanSvg={floorplanSvg}
           />
         </div>
       </div>

@@ -236,4 +236,5 @@ def get_session(session_id: str) -> dict:
         "messages": messages,
         "generated_image_url": row.get("generated_image_url"),
         "image_prompt": row.get("image_prompt"),
+        "floorplan_svg": row.get("floorplan_svg"),
     }

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Image, Upload, RefreshCw } from 'lucide-react'
 import { supabase } from '../supabase'
 import type { IntentModel } from '../App'
+import FloorplanPanel from './FloorplanPanel'
 
 interface Props {
   model: IntentModel
@@ -9,6 +10,7 @@ interface Props {
   imagePrompt: string | null
   isGenerating: boolean
   onGenerate: (referenceUrl?: string) => void
+  floorplanSvg: string | null
 }
 
 // ── JSON tree ─────────────────────────────────────────────────────────────────
@@ -60,11 +62,12 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
 
 // ── ModelPanel ────────────────────────────────────────────────────────────────
 
-export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGenerating, onGenerate }: Props) {
+export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGenerating, onGenerate, floorplanSvg }: Props) {
   const [referenceFile, setReferenceFile] = useState<File | null>(null)
   const [referencePreview, setReferencePreview] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [activeTab, setActiveTab] = useState<'model' | 'floorplan'>('model')
 
   const isEmpty = Object.keys(model).length === 0
   const busy = isGenerating || isUploading
@@ -186,12 +189,38 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
           />
         </div>
 
-        {/* JSON model */}
-        {isEmpty ? (
-          <p className="text-xs text-gray-400 text-center mt-4">Zahajte rozhovor…</p>
+        {/* Záložky */}
+        <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm shrink-0">
+          <button
+            onClick={() => setActiveTab('model')}
+            className={`flex-1 py-2 text-xs font-medium transition ${
+              activeTab === 'model' ? 'bg-[#1D9E75] text-white' : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            Model záměru
+          </button>
+          <button
+            onClick={() => setActiveTab('floorplan')}
+            className={`flex-1 py-2 text-xs font-medium transition ${
+              activeTab === 'floorplan' ? 'bg-[#1D9E75] text-white' : 'text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            Půdorys
+          </button>
+        </div>
+
+        {/* Obsah záložky */}
+        {activeTab === 'model' ? (
+          isEmpty ? (
+            <p className="text-xs text-gray-400 text-center mt-4">Zahajte rozhovor…</p>
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-xs font-mono leading-5">
+              <JsonNode value={model} />
+            </div>
+          )
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-xs font-mono leading-5">
-            <JsonNode value={model} />
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <FloorplanPanel svg={floorplanSvg} />
           </div>
         )}
       </div>
