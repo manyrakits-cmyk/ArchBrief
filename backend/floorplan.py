@@ -91,6 +91,28 @@ ZONE_MAP: dict[str, str] = {
     "storage": "private",
 }
 
+DEFAULT_AREAS: dict[str, float] = {
+    "living": 30.0, "obyvaci_pokoj": 30.0,
+    "kitchen": 15.0, "kuchyne": 15.0,
+    "dining": 18.0, "jidelna": 18.0,
+    "bedroom": 16.0, "loznice": 16.0,
+    "bedroom_master": 22.0,
+    "detsky_pokoj": 14.0,
+    "bathroom": 8.0, "koupelna": 8.0,
+    "wc": 4.0,
+    "hall": 8.0, "chodba": 8.0,
+    "entry": 6.0, "zadneri": 6.0,
+    "office": 14.0, "pracovna": 14.0,
+    "garage": 25.0, "garaz": 25.0,
+    "terrace": 20.0, "terasa": 20.0,
+    "garden": 0.0, "zahrada": 0.0,
+    "storage": 6.0, "sklep": 6.0,
+    "laundry": 5.0, "satna": 6.0,
+    "balkon": 8.0, "schodiste": 10.0,
+    "pokoj_pro_hosty": 14.0,
+    "hobby_mistnost": 12.0,
+}
+
 
 # ── Pomocné funkce ─────────────────────────────────────────────────────────────
 
@@ -140,6 +162,7 @@ class RoomRect:
     name: str
     zone: str
     area_target: float
+    area_specified: bool   # True = uživatel explicitně zadal plochu
     x: float
     y: float
     width: float
@@ -177,12 +200,14 @@ def build_spatial_graph(intent_model: dict) -> tuple[list[dict], list[dict]]:
         display_name = ROOM_NAMES.get(key) or _capitalize_first(raw_name)
         zone = ZONE_MAP.get(key) or _infer_zone(raw_name.lower())
 
-        area_target = 15.0
+        area_target = DEFAULT_AREAS.get(key, 15.0)
+        area_specified = False
         if isinstance(space, dict):
             raw_area = space.get("area_target") or space.get("area")
             if raw_area is not None:
                 try:
                     area_target = float(raw_area)
+                    area_specified = True
                 except (ValueError, TypeError):
                     pass
 
@@ -192,13 +217,14 @@ def build_spatial_graph(intent_model: dict) -> tuple[list[dict], list[dict]]:
             "display_name": display_name,
             "zone": zone,
             "area_target": area_target,
+            "area_specified": area_specified,
         })
 
-    # Deduplicita — zachovat první výskyt
+    # Deduplicita — zachovat první výskyt; vyřadit místnosti s area=0 (zahrada)
     seen: set[str] = set()
     unique_nodes: list[dict] = []
     for n in nodes:
-        if n["id"] not in seen:
+        if n["id"] not in seen and n["area_target"] > 0:
             seen.add(n["id"])
             unique_nodes.append(n)
 
@@ -252,6 +278,7 @@ def compute_layout(nodes: list[dict], edges: list[dict]) -> FloorplanLayout:
                 name=n["display_name"],
                 zone=zone,
                 area_target=n["area_target"],
+                area_specified=n["area_specified"],
                 x=current_x,
                 y=current_y,
                 width=room_w,
@@ -305,18 +332,20 @@ def generate_svg(layout: FloorplanLayout, edges: list[dict]) -> str:
         )
         cx = room.x + room.width / 2
         cy = room.y + room.height / 2
+        cy_name = cy - 8 if room.area_specified else cy
         lines.append(
-            f'  <text x="{cx:.1f}" y="{cy - 8:.1f}" '
+            f'  <text x="{cx:.1f}" y="{cy_name:.1f}" '
             f'text-anchor="middle" dominant-baseline="middle" '
             f'font-size="11" font-weight="bold" fill="#333">'
             f'{_escape_xml(room.name)}</text>'
         )
-        lines.append(
-            f'  <text x="{cx:.1f}" y="{cy + 10:.1f}" '
-            f'text-anchor="middle" dominant-baseline="middle" '
-            f'font-size="9" fill="#666">'
-            f'{room.area_target:.0f} m²</text>'
-        )
+        if room.area_specified:
+            lines.append(
+                f'  <text x="{cx:.1f}" y="{cy + 10:.1f}" '
+                f'text-anchor="middle" dominant-baseline="middle" '
+                f'font-size="9" fill="#666">'
+                f'{room.area_target:.0f} m²</text>'
+            )
 
     # Vztahy
     for edge in edges:

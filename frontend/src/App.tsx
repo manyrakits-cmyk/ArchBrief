@@ -5,9 +5,12 @@ import AuthForm from './components/AuthForm'
 import ProjectList from './components/ProjectList'
 import ChatPanel from './components/ChatPanel'
 import ModelPanel from './components/ModelPanel'
-import { LogOut, ChevronLeft } from 'lucide-react'
+import ExportPage from './components/ExportPage'
+import { LogOut, ChevronLeft, Download } from 'lucide-react'
 
 const API = 'http://localhost:5000'
+const LS_SESSION = 'archbrief_session_id'
+const LS_PROJECT_NAME = 'archbrief_project_name'
 
 export interface Message {
   role: 'user' | 'assistant'
@@ -16,7 +19,7 @@ export interface Message {
 
 export type IntentModel = Record<string, unknown>
 
-type View = 'auth' | 'projects' | 'chat'
+type View = 'auth' | 'projects' | 'chat' | 'export'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -38,13 +41,22 @@ export default function App() {
   // Floorplan state
   const [floorplanSvg, setFloorplanSvg] = useState<string | null>(null)
 
+  // Export state
+  const [projectId, setProjectId] = useState<string | null>(null)
+
   // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUser(session.user)
         setAuthToken(session.access_token)
-        setView('projects')
+        const savedSid = localStorage.getItem(LS_SESSION)
+        const savedName = localStorage.getItem(LS_PROJECT_NAME) ?? 'Nový projekt'
+        if (savedSid) {
+          void handleOpenProject(savedSid, savedName)
+        } else {
+          setView('projects')
+        }
       }
     })
 
@@ -72,6 +84,9 @@ export default function App() {
     setGeneratedImageUrl(null)
     setImagePrompt(null)
     setFloorplanSvg(null)
+    setProjectId(null)
+    localStorage.removeItem(LS_SESSION)
+    localStorage.removeItem(LS_PROJECT_NAME)
   }
 
   async function authHeaders() {
@@ -103,9 +118,12 @@ export default function App() {
       }
       if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
       setSessionId(data.session_id)
+      setProjectId((data as Record<string, unknown>).project_id as string ?? null)
       setIntentModel(data.intent_model)
       setMessages([{ role: 'assistant', content: data.assistant_message }])
       setProjectName(name)
+      localStorage.setItem(LS_SESSION, data.session_id)
+      localStorage.setItem(LS_PROJECT_NAME, name)
       setView('chat')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Chyba při vytváření projektu')
@@ -115,7 +133,7 @@ export default function App() {
   }
 
   // Otevření existujícího projektu — obnoví konverzaci ze Supabase
-  async function handleOpenProject(sid: string) {
+  async function handleOpenProject(sid: string, name?: string) {
     setIsLoading(true)
     resetChat()
     try {
@@ -127,12 +145,17 @@ export default function App() {
         error?: string
       }
       if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`)
+      const resolvedName = name ?? 'Nový projekt'
       setSessionId(sid)
       setIntentModel(data.intent_model)
       setMessages(data.messages ?? [])
+      setProjectId((data as Record<string, unknown>).project_id as string ?? null)
       setGeneratedImageUrl((data as Record<string, unknown>).generated_image_url as string ?? null)
       setImagePrompt((data as Record<string, unknown>).image_prompt as string ?? null)
       setFloorplanSvg((data as Record<string, unknown>).floorplan_svg as string ?? null)
+      setProjectName(resolvedName)
+      localStorage.setItem(LS_SESSION, sid)
+      localStorage.setItem(LS_PROJECT_NAME, resolvedName)
       setView('chat')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Chyba při načítání projektu')
@@ -217,8 +240,22 @@ export default function App() {
       <ProjectList
         user={user!}
         authToken={authToken}
-        onOpenProject={handleOpenProject}
+        onOpenProject={(sid, name) => void handleOpenProject(sid, name)}
         onNewProject={(name) => void handleNewProject(name)}
+      />
+    )
+  }
+
+  if (view === 'export') {
+    return (
+      <ExportPage
+        sessionId={sessionId!}
+        projectName={projectName}
+        intentModel={intentModel}
+        generatedImageUrl={generatedImageUrl}
+        floorplanSvg={floorplanSvg}
+        authToken={authToken}
+        onBack={() => setView('chat')}
       />
     )
   }
@@ -240,6 +277,14 @@ export default function App() {
           <div className="w-2 h-2 rounded-full bg-[#1D9E75]" />
           <span className="font-semibold text-gray-800 text-sm">{projectName}</span>
         </div>
+        <button
+          onClick={() => setView('export')}
+          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#1D9E75]
+            border border-gray-200 rounded-lg px-2.5 py-1.5 transition hover:border-[#1D9E75]"
+        >
+          <Download size={13} />
+          Exportovat
+        </button>
         <button
           onClick={() => supabase.auth.signOut()}
           className="ml-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition"

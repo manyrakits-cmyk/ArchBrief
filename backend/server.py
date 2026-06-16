@@ -17,8 +17,10 @@ load_dotenv()  # načíst .env před importem modulů používajících env prom
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from flask import Response
 from agent import create_session, process_message, get_user_projects, get_session, rename_project, generate_and_save_image
 from floorplan import generate_floorplan_svg
+from pdf_generator import generate_pdf
 from supabase_client import get_supabase
 
 app = Flask(__name__)
@@ -149,6 +151,42 @@ def floorplan_svg_endpoint():
             pass  # non-fatal — sloupec možná ještě neexistuje v DB
 
         return jsonify(floorplan_data)
+    except KeyError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/export-pdf", methods=["POST"])
+def export_pdf_endpoint():
+    user, auth_err = _require_auth()
+    if auth_err:
+        return jsonify({"error": auth_err[0]}), auth_err[1]
+    try:
+        data = request.get_json(force=True) or {}
+        session_id = (data.get("session_id") or "").strip()
+        if not session_id:
+            return jsonify({"error": "session_id je povinný"}), 400
+
+        session_data = get_session(session_id)
+        user_email = getattr(user, "email", "") or ""
+
+        pdf_bytes = generate_pdf(session_data, user_email)
+
+        project_name = (session_data.get("intent_model") or {}) \
+            .get("project", {}).get("name", "projekt")
+        safe_name = "".join(
+            c if c.isalnum() or c in "-_" else "-"
+            for c in project_name.lower()
+        ).strip("-") or "projekt"
+        from datetime import date as _date
+        filename = f"archbrief-{safe_name}-{_date.today()}.pdf"
+
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     except KeyError as exc:
         return jsonify({"error": str(exc)}), 404
     except Exception as exc:

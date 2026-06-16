@@ -14,7 +14,7 @@ interface Project {
 interface Props {
   user: User
   authToken: string
-  onOpenProject: (sessionId: string) => void
+  onOpenProject: (sessionId: string, name: string) => void
   onNewProject: (name: string) => void
 }
 
@@ -194,7 +194,7 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
             {projects.map(project => (
               <div
                 key={project.id}
-                onClick={() => editingId !== project.id && project.session_id && onOpenProject(project.session_id)}
+                onClick={() => editingId !== project.id && project.session_id && onOpenProject(project.session_id, project.name)}
                 className="w-full text-left bg-white border border-gray-100 rounded-2xl p-5
                   hover:border-[#1D9E75]/40 hover:shadow-sm transition group cursor-pointer"
               >
