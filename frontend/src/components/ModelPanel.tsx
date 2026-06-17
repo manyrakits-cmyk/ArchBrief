@@ -17,25 +17,25 @@ interface Props {
 
 function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
   if (value === null || value === undefined) {
-    return <span className="text-gray-300 italic">null</span>
+    return <span style={{ color: '#333' }} className="italic">null</span>
   }
   if (typeof value === 'boolean') {
-    return <span className="text-purple-400">{value.toString()}</span>
+    return <span style={{ color: '#888' }}>{value.toString()}</span>
   }
   if (typeof value === 'number') {
-    return <span className="text-blue-400">{value}</span>
+    return <span style={{ color: '#A0C8B0' }}>{value}</span>
   }
   if (typeof value === 'string') {
-    if (value === '') return <span className="text-gray-300 italic">""</span>
-    return <span className="text-emerald-700">"{value}"</span>
+    if (value === '') return <span style={{ color: '#333' }} className="italic">{`""`}</span>
+    return <span style={{ color: '#888' }}>{`"${value}"`}</span>
   }
   if (Array.isArray(value)) {
-    if (value.length === 0) return <span className="text-gray-300">[ ]</span>
+    if (value.length === 0) return <span style={{ color: '#2A2A2A' }}>{'[ ]'}</span>
     return (
-      <div className="ml-3 pl-2 border-l border-gray-100 space-y-0.5 mt-0.5">
+      <div className="ml-3 pl-2 space-y-0.5 mt-0.5" style={{ borderLeft: '1px solid #1E1E1E' }}>
         {value.map((item, i) => (
           <div key={i} className="flex gap-1.5 items-start">
-            <span className="text-gray-300 select-none shrink-0 mt-0.5">•</span>
+            <span style={{ color: '#2A2A2A' }} className="select-none shrink-0 mt-0.5">•</span>
             <div className="min-w-0"><JsonNode value={item} depth={depth + 1} /></div>
           </div>
         ))}
@@ -44,20 +44,23 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
   }
   if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
-    if (entries.length === 0) return <span className="text-gray-300">{ }</span>
+    if (entries.length === 0) return <span style={{ color: '#2A2A2A' }}>{'{ }'}</span>
     return (
-      <div className={`space-y-0.5 ${depth > 0 ? 'ml-3 pl-2 border-l border-gray-100 mt-0.5' : ''}`}>
+      <div
+        className={`space-y-0.5 ${depth > 0 ? 'ml-3 pl-2 mt-0.5' : ''}`}
+        style={depth > 0 ? { borderLeft: '1px solid #1E1E1E' } : undefined}
+      >
         {entries.map(([key, val]) => (
           <div key={key} className="flex flex-wrap gap-x-1.5 items-start">
-            <span className="text-cyan-700 font-semibold shrink-0">{key}</span>
-            <span className="text-gray-300 shrink-0">:</span>
+            <span style={{ color: '#1D9E75' }} className="font-semibold shrink-0">{key}</span>
+            <span style={{ color: '#2A2A2A' }} className="shrink-0">:</span>
             <div className="min-w-0"><JsonNode value={val} depth={depth + 1} /></div>
           </div>
         ))}
       </div>
     )
   }
-  return <span className="text-gray-700">{String(value)}</span>
+  return <span style={{ color: '#666' }}>{String(value)}</span>
 }
 
 // ── ModelPanel ────────────────────────────────────────────────────────────────
@@ -99,27 +102,38 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-[#0A0A0A]">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center gap-2 shrink-0">
+      <div
+        className="px-4 flex items-center gap-2 shrink-0"
+        style={{ height: 44, borderBottom: '1px solid #141414' }}
+      >
         <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-        <h2 className="text-sm font-semibold text-gray-700">Model záměru</h2>
+        <h2 className="text-sm font-semibold text-[#E8E8E8]">Model záměru</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
 
         {/* Vygenerovaný obrázek */}
         {generatedImageUrl && (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ border: '1px solid #1E1E1E', background: '#111' }}
+          >
             <img src={generatedImageUrl} alt="Vizualizace" className="w-full" />
             {imagePrompt && (
-              <p className="text-xs text-gray-400 p-3 leading-relaxed line-clamp-3">{imagePrompt}</p>
+              <p className="p-3 leading-relaxed line-clamp-3" style={{ fontSize: 11, color: '#333' }}>
+                {imagePrompt}
+              </p>
             )}
           </div>
         )}
 
         {/* Sekce generování */}
-        <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm space-y-2">
+        <div
+          className="rounded-xl p-3 space-y-2"
+          style={{ background: '#111', border: '1px solid #1E1E1E' }}
+        >
           {/* Náhled referenčního obrázku */}
           {referencePreview && (
             <div className="relative">
@@ -142,8 +156,8 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
             <button
               onClick={() => void handleGenerate()}
               disabled={busy}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#1D9E75] text-white
-                rounded-xl text-sm font-medium hover:bg-[#178a65] disabled:opacity-50 transition"
+              className="flex-1 flex items-center justify-center gap-2 py-[10px] bg-[#1D9E75] text-white
+                rounded-lg text-[13px] font-medium hover:bg-[#17856A] disabled:opacity-50 transition-colors duration-150"
             >
               {busy ? (
                 <>
@@ -160,16 +174,24 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={busy}
-              className="px-3 py-2.5 border border-gray-200 rounded-xl text-gray-500
-                hover:border-gray-300 hover:text-gray-700 disabled:opacity-50 transition"
+              className="px-3 py-[10px] rounded-lg disabled:opacity-50 transition-colors duration-150"
+              style={{ border: '1px solid #1E1E1E', color: '#444' }}
               title="Nahrát referenční fotku"
+              onMouseEnter={e => {
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#2A2A2A'
+                ;(e.currentTarget as HTMLButtonElement).style.color = '#666'
+              }}
+              onMouseLeave={e => {
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#1E1E1E'
+                ;(e.currentTarget as HTMLButtonElement).style.color = '#444'
+              }}
             >
               <Upload size={14} />
             </button>
           </div>
 
           {!referencePreview && (
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-center" style={{ color: '#333' }}>
               Pro image-to-image nahrajte inspiraci →{' '}
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -190,20 +212,26 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
         </div>
 
         {/* Záložky */}
-        <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm shrink-0">
+        <div className="flex shrink-0" style={{ borderBottom: '1px solid #141414' }}>
           <button
             onClick={() => setActiveTab('model')}
-            className={`flex-1 py-2 text-xs font-medium transition ${
-              activeTab === 'model' ? 'bg-[#1D9E75] text-white' : 'text-gray-500 hover:bg-gray-50'
-            }`}
+            className="flex-1 py-2 text-xs font-medium transition-colors duration-150"
+            style={{
+              color: activeTab === 'model' ? '#E8E8E8' : '#444',
+              borderBottom: activeTab === 'model' ? '2px solid #1D9E75' : '2px solid transparent',
+              background: activeTab === 'model' ? '#0D0D0D' : 'transparent',
+            }}
           >
             Model záměru
           </button>
           <button
             onClick={() => setActiveTab('floorplan')}
-            className={`flex-1 py-2 text-xs font-medium transition ${
-              activeTab === 'floorplan' ? 'bg-[#1D9E75] text-white' : 'text-gray-500 hover:bg-gray-50'
-            }`}
+            className="flex-1 py-2 text-xs font-medium transition-colors duration-150"
+            style={{
+              color: activeTab === 'floorplan' ? '#E8E8E8' : '#444',
+              borderBottom: activeTab === 'floorplan' ? '2px solid #1D9E75' : '2px solid transparent',
+              background: activeTab === 'floorplan' ? '#0D0D0D' : 'transparent',
+            }}
           >
             Půdorys
           </button>
@@ -212,14 +240,20 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
         {/* Obsah záložky */}
         {activeTab === 'model' ? (
           isEmpty ? (
-            <p className="text-xs text-gray-400 text-center mt-4">Zahajte rozhovor…</p>
+            <p className="text-xs text-center mt-4" style={{ color: '#333' }}>Zahajte rozhovor…</p>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm text-xs font-mono leading-5">
+            <div
+              className="rounded-xl p-4 text-xs font-mono"
+              style={{ background: '#111', border: '1px solid #1E1E1E', lineHeight: 1.75 }}
+            >
               <JsonNode value={model} />
             </div>
           )
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ background: '#111', border: '1px solid #1E1E1E' }}
+          >
             <FloorplanPanel svg={floorplanSvg} />
           </div>
         )}

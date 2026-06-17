@@ -262,32 +262,49 @@ export default function App() {
 
   // view === 'chat'
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-[#0A0A0A]">
       {/* Header */}
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3 shrink-0">
+      <header
+        className="bg-[#0A0A0A] px-5 flex items-center gap-3 shrink-0"
+        style={{ height: 52, borderBottom: '1px solid #1E1E1E' }}
+      >
         <button
           onClick={() => setView('projects')}
-          className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition"
+          className="flex items-center gap-1 text-xs transition-colors duration-150"
+          style={{ color: '#444' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={15} />
           Projekty
         </button>
-        <div className="w-px h-4 bg-gray-200" />
+        <div className="w-px h-4" style={{ background: '#1E1E1E' }} />
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[#1D9E75]" />
-          <span className="font-semibold text-gray-800 text-sm">{projectName}</span>
+          <span className="font-medium text-[#E8E8E8]" style={{ fontSize: 13 }}>{projectName}</span>
         </div>
         <button
           onClick={() => setView('export')}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#1D9E75]
-            border border-gray-200 rounded-lg px-2.5 py-1.5 transition hover:border-[#1D9E75]"
+          className="flex items-center gap-1.5 transition-colors duration-150 rounded-md px-2.5 py-1.5"
+          style={{ fontSize: 12, color: '#666', border: '1px solid #1E1E1E' }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#1D9E75'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#1D9E75'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#666'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#1E1E1E'
+          }}
         >
-          <Download size={13} />
+          <Download size={12} />
           Exportovat
         </button>
         <button
           onClick={() => supabase.auth.signOut()}
-          className="ml-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition"
+          className="ml-auto flex items-center gap-1.5 text-xs transition-colors duration-150"
+          style={{ color: '#444' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
           <LogOut size={13} />
           Odhlásit
@@ -296,7 +313,7 @@ export default function App() {
 
       {/* Panels */}
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-[60%] border-r border-gray-200">
+        <div className="w-[60%]" style={{ borderRight: '1px solid #141414' }}>
           <ChatPanel messages={messages} onSend={sendMessage} isLoading={isLoading} />
         </div>
         <div className="w-[40%]">

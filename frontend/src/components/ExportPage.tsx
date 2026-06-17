@@ -14,6 +14,20 @@ interface Props {
   onBack: () => void
 }
 
+function SectionLabel({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 mb-3">
+      <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75] shrink-0" />
+      <span
+        className="font-semibold tracking-[0.1em] uppercase"
+        style={{ fontSize: 10, color: '#1D9E75' }}
+      >
+        {label}
+      </span>
+    </div>
+  )
+}
+
 export default function ExportPage({
   sessionId,
   projectName,
@@ -63,13 +77,33 @@ export default function ExportPage({
     }
   }
 
+  const sectionStyle: React.CSSProperties = {
+    background: '#111',
+    border: '1px solid #1E1E1E',
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 12,
+  }
+
+  const bodyTextStyle: React.CSSProperties = {
+    fontSize: 13,
+    color: '#888',
+    lineHeight: 1.65,
+  }
+
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-[#0A0A0A]">
       {/* Header */}
-      <header className="bg-white border-b px-4 py-3 flex items-center gap-3 shrink-0">
+      <header
+        className="bg-[#0A0A0A] px-5 flex items-center gap-3 shrink-0"
+        style={{ height: 52, borderBottom: '1px solid #1E1E1E' }}
+      >
         <button
           onClick={onBack}
-          className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition"
+          className="flex items-center gap-1 text-sm transition-colors duration-150"
+          style={{ color: '#444' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#888')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
           <ChevronLeft size={16} />
           Zpět do projektu
@@ -79,7 +113,7 @@ export default function ExportPage({
           onClick={() => void handleDownload()}
           disabled={isDownloading}
           className="flex items-center gap-2 px-4 py-2 bg-[#1D9E75] text-white
-            rounded-xl text-sm font-medium hover:bg-[#178a65] disabled:opacity-50 transition"
+            rounded-lg text-sm font-medium hover:bg-[#17856A] disabled:opacity-50 transition-colors duration-150"
         >
           {isDownloading
             ? <><RefreshCw size={14} className="animate-spin" />Generuji PDF…</>
@@ -89,100 +123,97 @@ export default function ExportPage({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl mx-auto space-y-4">
+        <div className="max-w-[860px] mx-auto">
 
-          {/* Titulek stránky */}
-          <div className="flex items-center justify-between mb-2">
+          {/* Nadpis */}
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Váš ArchBrief je připraven</h1>
-              <p className="text-sm text-gray-400 mt-0.5">Náhled obsahu dokumentu</p>
+              <h1 className="font-semibold text-[#E8E8E8]" style={{ fontSize: 22 }}>
+                Váš ArchBrief je připraven
+              </h1>
+              <p style={{ fontSize: 13, color: '#444', marginTop: 3 }}>Náhled obsahu dokumentu</p>
             </div>
-            <div className="text-2xl font-bold text-[#1D9E75]">ArchBrief</div>
+            <div className="font-bold text-[#1D9E75]" style={{ fontSize: 20 }}>ArchBrief</div>
           </div>
 
-          {/* Titulní informace */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Titulní strana</span>
-            </div>
-            <p className="text-2xl font-bold text-[#1D9E75]">ArchBrief</p>
-            <p className="text-lg text-gray-700 mt-0.5">{projectName}</p>
-            <p className="text-xs text-gray-400 mt-2">Připraveno pro předání architektovi · {today}</p>
+          {/* Titulní strana */}
+          <div style={sectionStyle}>
+            <SectionLabel label="Titulní strana" />
+            <p className="font-bold text-[#1D9E75]" style={{ fontSize: 22 }}>ArchBrief</p>
+            <p className="text-[#E8E8E8] mt-1" style={{ fontSize: 16 }}>{projectName}</p>
+            <p style={{ fontSize: 12, color: '#444', marginTop: 8 }}>
+              Připraveno pro předání architektovi · {today}
+            </p>
           </div>
 
           {/* Shrnutí záměru */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Shrnutí záměru</span>
-            </div>
-            <div className="space-y-1.5 text-sm">
+          <div style={sectionStyle}>
+            <SectionLabel label="Shrnutí záměru" />
+            <div className="space-y-1.5" style={bodyTextStyle}>
               {intent.primary_goal && (
-                <p><span className="text-gray-500">Primární cíl:</span>{' '}
-                  <span className="text-gray-800">{String(intent.primary_goal)}</span></p>
+                <p><span style={{ color: '#555' }}>Primární cíl:</span>{' '}
+                  <span style={{ color: '#888' }}>{String(intent.primary_goal)}</span></p>
               )}
               {project.type && (
-                <p><span className="text-gray-500">Typ:</span>{' '}
-                  <span className="text-gray-800">{String(project.type)}</span></p>
+                <p><span style={{ color: '#555' }}>Typ:</span>{' '}
+                  <span style={{ color: '#888' }}>{String(project.type)}</span></p>
               )}
               {site.location && (
-                <p><span className="text-gray-500">Lokalita:</span>{' '}
-                  <span className="text-gray-800">{String(site.location)}</span></p>
+                <p><span style={{ color: '#555' }}>Lokalita:</span>{' '}
+                  <span style={{ color: '#888' }}>{String(site.location)}</span></p>
               )}
               {(style.keywords || style.atmosphere) && (
-                <p><span className="text-gray-500">Styl:</span>{' '}
-                  <span className="text-gray-800">
+                <p><span style={{ color: '#555' }}>Styl:</span>{' '}
+                  <span style={{ color: '#888' }}>
                     {[style.keywords, style.atmosphere].filter(Boolean).map(String).join(' — ')}
                   </span></p>
               )}
               {(budget.target || budget.max) && (
-                <p><span className="text-gray-500">Rozpočet:</span>{' '}
-                  <span className="text-gray-800">
+                <p><span style={{ color: '#555' }}>Rozpočet:</span>{' '}
+                  <span style={{ color: '#888' }}>
                     {[budget.target, budget.max].filter(Boolean).map(String).join(' / max ')}
                   </span></p>
+              )}
+              {!intent.primary_goal && !project.type && !site.location && (
+                <p style={{ color: '#333', fontStyle: 'italic' }}>Záměr zatím nebyl specifikován</p>
               )}
             </div>
           </div>
 
-          {/* AI vizualizace */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vizualizace</span>
-            </div>
+          {/* Vizualizace */}
+          <div style={sectionStyle}>
+            <SectionLabel label="Vizualizace" />
             {generatedImageUrl ? (
-              <img src={generatedImageUrl} alt="Vizualizace" className="w-full rounded-lg" />
+              <img src={generatedImageUrl} alt="Vizualizace" className="w-full rounded-lg"
+                style={{ border: '1px solid #1E1E1E' }} />
             ) : (
-              <p className="text-xs text-gray-400 italic">Vizualizace nebyla vygenerována</p>
+              <p style={{ ...bodyTextStyle, fontStyle: 'italic', color: '#333' }}>
+                Vizualizace nebyla vygenerována
+              </p>
             )}
           </div>
 
           {/* Půdorys */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Schematický půdorys</span>
-            </div>
+          <div style={sectionStyle}>
+            <SectionLabel label="Schematický půdorys" />
             {floorplanSvg ? (
               <div className="overflow-auto" dangerouslySetInnerHTML={{ __html: floorplanSvg }} />
             ) : (
-              <p className="text-xs text-gray-400 italic">Půdorys nebyl vygenerován</p>
+              <p style={{ ...bodyTextStyle, fontStyle: 'italic', color: '#333' }}>
+                Půdorys nebyl vygenerován
+              </p>
             )}
           </div>
 
           {/* Tabulka místností */}
           {spaces.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Prostorový program</span>
-              </div>
-              <table className="w-full text-sm">
+            <div style={sectionStyle}>
+              <SectionLabel label="Prostorový program" />
+              <table className="w-full" style={{ fontSize: 13 }}>
                 <thead>
-                  <tr className="bg-[#1D9E75] text-white text-xs">
-                    <th className="text-left px-3 py-2 rounded-tl-lg">Místnost</th>
-                    <th className="text-right px-3 py-2 rounded-tr-lg">Plocha</th>
+                  <tr style={{ background: '#1D9E75', color: '#fff' }}>
+                    <th className="text-left px-3 py-2 rounded-tl-lg" style={{ fontSize: 12 }}>Místnost</th>
+                    <th className="text-right px-3 py-2 rounded-tr-lg" style={{ fontSize: 12 }}>Plocha</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -194,9 +225,9 @@ export default function ExportPage({
                       ? (space as Record<string, unknown>).area_target ?? (space as Record<string, unknown>).area
                       : null
                     return (
-                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-[#D4E8D4]/30'}>
-                        <td className="px-3 py-2 text-gray-700">{name}</td>
-                        <td className="px-3 py-2 text-gray-500 text-right">
+                      <tr key={i} style={{ background: i % 2 === 0 ? '#161616' : '#111' }}>
+                        <td className="px-3 py-2" style={{ color: '#888' }}>{name}</td>
+                        <td className="px-3 py-2 text-right" style={{ color: '#555' }}>
                           {area ? `${area} m²` : '—'}
                         </td>
                       </tr>
@@ -208,12 +239,13 @@ export default function ExportPage({
           )}
 
           {/* CTA */}
-          <div className="flex justify-center pt-2 pb-6">
+          <div className="flex justify-center pt-2 pb-8">
             <button
               onClick={() => void handleDownload()}
               disabled={isDownloading}
-              className="flex items-center gap-2 px-6 py-3 bg-[#1D9E75] text-white
-                rounded-xl text-base font-medium hover:bg-[#178a65] disabled:opacity-50 transition shadow-sm"
+              className="flex items-center gap-2 px-7 py-3 bg-[#1D9E75] text-white
+                rounded-lg font-medium hover:bg-[#17856A] disabled:opacity-50 transition-colors duration-150"
+              style={{ fontSize: 14, width: '100%', justifyContent: 'center' }}
             >
               {isDownloading
                 ? <><RefreshCw size={16} className="animate-spin" />Generuji PDF…</>

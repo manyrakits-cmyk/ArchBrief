@@ -39,18 +39,18 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-[#111] rounded-2xl border border-[#1E1E1E] p-8">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <div className="w-2.5 h-2.5 rounded-full bg-[#1D9E75]" />
-          <span className="font-semibold text-gray-800">ArchBrief</span>
+          <span className="font-semibold text-white">ArchBrief</span>
         </div>
 
-        <h1 className="text-xl font-semibold text-gray-800 mb-1">
+        <h1 className="text-xl font-semibold text-[#E8E8E8] mb-1">
           {mode === 'login' ? 'Přihlásit se' : 'Vytvořit účet'}
         </h1>
-        <p className="text-sm text-gray-400 mb-6">
+        <p className="text-sm text-[#444] mb-6">
           {mode === 'login'
             ? 'Pro přístup k vašim projektům'
             : 'Začněte svůj první projekt'}
@@ -59,8 +59,8 @@ export default function AuthForm() {
         {/* Google */}
         <button
           onClick={handleGoogle}
-          className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-gray-200
-            rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition mb-4"
+          className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-[#1E1E1E]
+            rounded-xl text-sm text-[#888] hover:bg-[#161616] hover:border-[#2A2A2A] transition-colors duration-150 mb-4"
         >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
@@ -72,9 +72,9 @@ export default function AuthForm() {
         </button>
 
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-gray-100" />
-          <span className="text-xs text-gray-300">nebo</span>
-          <div className="flex-1 h-px bg-gray-100" />
+          <div className="flex-1 h-px bg-[#1E1E1E]" />
+          <span className="text-xs text-[#333]">nebo</span>
+          <div className="flex-1 h-px bg-[#1E1E1E]" />
         </div>
 
         {/* Email form */}
@@ -85,8 +85,9 @@ export default function AuthForm() {
             onChange={e => setEmail(e.target.value)}
             placeholder="E-mail"
             required
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none
-              focus:border-[#1D9E75] focus:ring-1 focus:ring-[#1D9E75]/30 transition"
+            className="w-full px-4 py-2.5 rounded-xl bg-[#111] border border-[#1E1E1E] text-sm
+              text-[#E8E8E8] placeholder-[#333] outline-none
+              focus:border-[#2A2A2A] transition-colors"
           />
           <input
             type="password"
@@ -95,25 +96,26 @@ export default function AuthForm() {
             placeholder="Heslo"
             required
             minLength={6}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none
-              focus:border-[#1D9E75] focus:ring-1 focus:ring-[#1D9E75]/30 transition"
+            className="w-full px-4 py-2.5 rounded-xl bg-[#111] border border-[#1E1E1E] text-sm
+              text-[#E8E8E8] placeholder-[#333] outline-none
+              focus:border-[#2A2A2A] transition-colors"
           />
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-400">{error}</p>}
           {info && <p className="text-xs text-[#1D9E75]">{info}</p>}
 
           <button
             type="submit"
             disabled={isLoading}
             className="w-full py-2.5 bg-[#1D9E75] text-white rounded-xl text-sm font-medium
-              hover:bg-[#178a65] disabled:opacity-50 transition"
+              hover:bg-[#17856A] disabled:opacity-50 transition-colors duration-150"
           >
             {isLoading ? 'Načítám…' : mode === 'login' ? 'Přihlásit se' : 'Vytvořit účet'}
           </button>
         </form>
 
         {/* Switch mode */}
-        <p className="text-xs text-center text-gray-400 mt-4">
+        <p className="text-xs text-center text-[#444] mt-4">
           {mode === 'login' ? 'Nemáte účet? ' : 'Máte účet? '}
           <button
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setInfo(null) }}
