@@ -109,10 +109,10 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
         <div className="w-2 h-2 rounded-full bg-[#1D9E75]" />
         <span className="font-semibold text-white text-sm">ArchBrief</span>
         <div className="ml-auto flex items-center gap-4">
-          <span className="text-xs text-[#444]">{user.email}</span>
+          <span className="text-xs text-[#666]">{user.email}</span>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-[#444] hover:text-[#888] transition-colors duration-150"
+            className="flex items-center gap-1.5 text-xs text-[#666] hover:text-[#888] transition-colors duration-150"
           >
             <LogOut size={13} />
             Odhlásit
@@ -125,7 +125,7 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-[22px] font-semibold text-[#E8E8E8]">Moje projekty</h1>
-            <p className="text-[13px] text-[#444] mt-1">Vaše architektonické záměry</p>
+            <p className="text-[13px] font-medium text-[#666] mt-1">Vaše architektonické záměry</p>
           </div>
           {isNaming ? (
             <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
               </button>
               <button
                 onClick={() => setIsNaming(false)}
-                className="px-3 py-2 text-sm text-[#444] hover:text-[#888] transition-colors duration-150"
+                className="px-3 py-2 text-sm text-[#666] hover:text-[#888] transition-colors duration-150"
               >
                 Zrušit
               </button>
@@ -165,7 +165,7 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
         </div>
 
         {isLoading && (
-          <div className="text-center py-16 text-[#444] text-sm">Načítám projekty…</div>
+          <div className="text-center py-16 text-[#666] text-sm">Načítám projekty…</div>
         )}
 
         {error && (
@@ -180,7 +180,7 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
         {!isLoading && !error && projects.length === 0 && (
           <div className="text-center py-16">
             <FolderOpen size={40} className="mx-auto text-[#222] mb-4" />
-            <p className="text-[#444] text-sm mb-4">Zatím žádné projekty</p>
+            <p className="text-[#666] text-sm mb-4">Zatím žádné projekty</p>
             <button
               onClick={startNaming}
               className="px-4 py-2 bg-[#1D9E75] text-white rounded-lg text-sm
@@ -223,7 +223,7 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
                         </h3>
                         <button
                           onClick={e => startEditing(project, e)}
-                          className="opacity-0 group-hover:opacity-100 text-[#333]
+                          className="opacity-0 group-hover:opacity-100 text-[#555]
                             hover:text-[#1D9E75] transition-all duration-150 shrink-0"
                         >
                           <Pencil size={12} />
@@ -231,13 +231,13 @@ export default function ProjectList({ user, authToken, onOpenProject, onNewProje
                       </div>
                     )}
                     {project.type && (
-                      <span className="inline-block mt-1 text-xs text-[#444] bg-[#161616]
+                      <span className="inline-block mt-1 text-xs text-[#666] bg-[#161616]
                         px-2 py-0.5 rounded-full">
                         {project.type}
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-[#333] shrink-0">
+                  <span className="text-xs font-medium text-[#555] shrink-0">
                     {formatDate(project.updated_at)}
                   </span>
                 </div>

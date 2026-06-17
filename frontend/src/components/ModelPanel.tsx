@@ -17,7 +17,7 @@ interface Props {
 
 function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
   if (value === null || value === undefined) {
-    return <span style={{ color: '#333' }} className="italic">null</span>
+    return <span style={{ color: '#555' }} className="italic">null</span>
   }
   if (typeof value === 'boolean') {
     return <span style={{ color: '#888' }}>{value.toString()}</span>
@@ -26,16 +26,16 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
     return <span style={{ color: '#A0C8B0' }}>{value}</span>
   }
   if (typeof value === 'string') {
-    if (value === '') return <span style={{ color: '#333' }} className="italic">{`""`}</span>
+    if (value === '') return <span style={{ color: '#555' }} className="italic">{`""`}</span>
     return <span style={{ color: '#888' }}>{`"${value}"`}</span>
   }
   if (Array.isArray(value)) {
-    if (value.length === 0) return <span style={{ color: '#2A2A2A' }}>{'[ ]'}</span>
+    if (value.length === 0) return <span style={{ color: '#666' }}>{'[ ]'}</span>
     return (
       <div className="ml-3 pl-2 space-y-0.5 mt-0.5" style={{ borderLeft: '1px solid #1E1E1E' }}>
         {value.map((item, i) => (
           <div key={i} className="flex gap-1.5 items-start">
-            <span style={{ color: '#2A2A2A' }} className="select-none shrink-0 mt-0.5">•</span>
+            <span style={{ color: '#666' }} className="select-none shrink-0 mt-0.5">•</span>
             <div className="min-w-0"><JsonNode value={item} depth={depth + 1} /></div>
           </div>
         ))}
@@ -44,7 +44,7 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
   }
   if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
-    if (entries.length === 0) return <span style={{ color: '#2A2A2A' }}>{'{ }'}</span>
+    if (entries.length === 0) return <span style={{ color: '#666' }}>{'{ }'}</span>
     return (
       <div
         className={`space-y-0.5 ${depth > 0 ? 'ml-3 pl-2 mt-0.5' : ''}`}
@@ -53,7 +53,7 @@ function JsonNode({ value, depth = 0 }: { value: unknown; depth?: number }) {
         {entries.map(([key, val]) => (
           <div key={key} className="flex flex-wrap gap-x-1.5 items-start">
             <span style={{ color: '#1D9E75' }} className="font-semibold shrink-0">{key}</span>
-            <span style={{ color: '#2A2A2A' }} className="shrink-0">:</span>
+            <span style={{ color: '#666' }} className="shrink-0">:</span>
             <div className="min-w-0"><JsonNode value={val} depth={depth + 1} /></div>
           </div>
         ))}
@@ -122,7 +122,7 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
           >
             <img src={generatedImageUrl} alt="Vizualizace" className="w-full" />
             {imagePrompt && (
-              <p className="p-3 leading-relaxed line-clamp-3" style={{ fontSize: 11, color: '#333' }}>
+              <p className="p-3 leading-relaxed line-clamp-3" style={{ fontSize: 11, color: '#555' }}>
                 {imagePrompt}
               </p>
             )}
@@ -175,10 +175,10 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
               onClick={() => fileInputRef.current?.click()}
               disabled={busy}
               className="px-3 py-[10px] rounded-lg disabled:opacity-50 transition-colors duration-150"
-              style={{ border: '1px solid #1E1E1E', color: '#444' }}
+              style={{ border: '1px solid #1E1E1E', color: '#666' }}
               title="Nahrát referenční fotku"
               onMouseEnter={e => {
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#2A2A2A'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#444'
                 ;(e.currentTarget as HTMLButtonElement).style.color = '#666'
               }}
               onMouseLeave={e => {
@@ -191,7 +191,7 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
           </div>
 
           {!referencePreview && (
-            <p className="text-xs text-center" style={{ color: '#333' }}>
+            <p className="text-xs text-center" style={{ color: '#555' }}>
               Pro image-to-image nahrajte inspiraci →{' '}
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -240,7 +240,7 @@ export default function ModelPanel({ model, generatedImageUrl, imagePrompt, isGe
         {/* Obsah záložky */}
         {activeTab === 'model' ? (
           isEmpty ? (
-            <p className="text-xs text-center mt-4" style={{ color: '#333' }}>Zahajte rozhovor…</p>
+            <p className="text-xs text-center mt-4" style={{ color: '#555' }}>Zahajte rozhovor…</p>
           ) : (
             <div
               className="rounded-xl p-4 text-xs font-mono"

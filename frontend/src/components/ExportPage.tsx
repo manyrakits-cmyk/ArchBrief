@@ -101,9 +101,9 @@ export default function ExportPage({
         <button
           onClick={onBack}
           className="flex items-center gap-1 text-sm transition-colors duration-150"
-          style={{ color: '#444' }}
+          style={{ color: '#666' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#666')}
         >
           <ChevronLeft size={16} />
           Zpět do projektu
@@ -131,7 +131,7 @@ export default function ExportPage({
               <h1 className="font-semibold text-[#E8E8E8]" style={{ fontSize: 22 }}>
                 Váš ArchBrief je připraven
               </h1>
-              <p style={{ fontSize: 13, color: '#444', marginTop: 3 }}>Náhled obsahu dokumentu</p>
+              <p style={{ fontSize: 13, color: '#666', marginTop: 3 }}>Náhled obsahu dokumentu</p>
             </div>
             <div className="font-bold text-[#1D9E75]" style={{ fontSize: 20 }}>ArchBrief</div>
           </div>
@@ -141,7 +141,7 @@ export default function ExportPage({
             <SectionLabel label="Titulní strana" />
             <p className="font-bold text-[#1D9E75]" style={{ fontSize: 22 }}>ArchBrief</p>
             <p className="text-[#E8E8E8] mt-1" style={{ fontSize: 16 }}>{projectName}</p>
-            <p style={{ fontSize: 12, color: '#444', marginTop: 8 }}>
+            <p style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
               Připraveno pro předání architektovi · {today}
             </p>
           </div>
@@ -151,31 +151,31 @@ export default function ExportPage({
             <SectionLabel label="Shrnutí záměru" />
             <div className="space-y-1.5" style={bodyTextStyle}>
               {intent.primary_goal && (
-                <p><span style={{ color: '#555' }}>Primární cíl:</span>{' '}
+                <p><span style={{ color: '#777' }}>Primární cíl:</span>{' '}
                   <span style={{ color: '#888' }}>{String(intent.primary_goal)}</span></p>
               )}
               {project.type && (
-                <p><span style={{ color: '#555' }}>Typ:</span>{' '}
+                <p><span style={{ color: '#777' }}>Typ:</span>{' '}
                   <span style={{ color: '#888' }}>{String(project.type)}</span></p>
               )}
               {site.location && (
-                <p><span style={{ color: '#555' }}>Lokalita:</span>{' '}
+                <p><span style={{ color: '#777' }}>Lokalita:</span>{' '}
                   <span style={{ color: '#888' }}>{String(site.location)}</span></p>
               )}
               {(style.keywords || style.atmosphere) && (
-                <p><span style={{ color: '#555' }}>Styl:</span>{' '}
+                <p><span style={{ color: '#777' }}>Styl:</span>{' '}
                   <span style={{ color: '#888' }}>
                     {[style.keywords, style.atmosphere].filter(Boolean).map(String).join(' — ')}
                   </span></p>
               )}
               {(budget.target || budget.max) && (
-                <p><span style={{ color: '#555' }}>Rozpočet:</span>{' '}
+                <p><span style={{ color: '#777' }}>Rozpočet:</span>{' '}
                   <span style={{ color: '#888' }}>
                     {[budget.target, budget.max].filter(Boolean).map(String).join(' / max ')}
                   </span></p>
               )}
               {!intent.primary_goal && !project.type && !site.location && (
-                <p style={{ color: '#333', fontStyle: 'italic' }}>Záměr zatím nebyl specifikován</p>
+                <p style={{ color: '#777', fontStyle: 'italic' }}>Záměr zatím nebyl specifikován</p>
               )}
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function ExportPage({
               <img src={generatedImageUrl} alt="Vizualizace" className="w-full rounded-lg"
                 style={{ border: '1px solid #1E1E1E' }} />
             ) : (
-              <p style={{ ...bodyTextStyle, fontStyle: 'italic', color: '#333' }}>
+              <p style={{ ...bodyTextStyle, fontStyle: 'italic', color: '#777' }}>
                 Vizualizace nebyla vygenerována
               </p>
             )}
@@ -199,7 +199,7 @@ export default function ExportPage({
             {floorplanSvg ? (
               <div className="overflow-auto" dangerouslySetInnerHTML={{ __html: floorplanSvg }} />
             ) : (
-              <p style={{ ...bodyTextStyle, fontStyle: 'italic', color: '#333' }}>
+              <p style={{ ...bodyTextStyle, fontStyle: 'italic', color: '#777' }}>
                 Půdorys nebyl vygenerován
               </p>
             )}
@@ -227,7 +227,7 @@ export default function ExportPage({
                     return (
                       <tr key={i} style={{ background: i % 2 === 0 ? '#161616' : '#111' }}>
                         <td className="px-3 py-2" style={{ color: '#888' }}>{name}</td>
-                        <td className="px-3 py-2 text-right" style={{ color: '#555' }}>
+                        <td className="px-3 py-2 text-right" style={{ color: '#777' }}>
                           {area ? `${area} m²` : '—'}
                         </td>
                       </tr>

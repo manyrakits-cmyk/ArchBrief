@@ -271,9 +271,9 @@ export default function App() {
         <button
           onClick={() => setView('projects')}
           className="flex items-center gap-1 text-xs transition-colors duration-150"
-          style={{ color: '#444' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          style={{ color: '#666' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#999')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#666')}
         >
           <ChevronLeft size={15} />
           Projekty
@@ -286,14 +286,14 @@ export default function App() {
         <button
           onClick={() => setView('export')}
           className="flex items-center gap-1.5 transition-colors duration-150 rounded-md px-2.5 py-1.5"
-          style={{ fontSize: 12, color: '#666', border: '1px solid #1E1E1E' }}
+          style={{ fontSize: 12, color: '#888', border: '1px solid #2A2A2A' }}
           onMouseEnter={e => {
             ;(e.currentTarget as HTMLButtonElement).style.color = '#1D9E75'
             ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#1D9E75'
           }}
           onMouseLeave={e => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = '#666'
-            ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#1E1E1E'
+            ;(e.currentTarget as HTMLButtonElement).style.color = '#888'
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#2A2A2A'
           }}
         >
           <Download size={12} />
@@ -302,9 +302,9 @@ export default function App() {
         <button
           onClick={() => supabase.auth.signOut()}
           className="ml-auto flex items-center gap-1.5 text-xs transition-colors duration-150"
-          style={{ color: '#444' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#888')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
+          style={{ color: '#666' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#999')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#666')}
         >
           <LogOut size={13} />
           Odhlásit

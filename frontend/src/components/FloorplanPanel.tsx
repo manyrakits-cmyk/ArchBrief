@@ -16,7 +16,7 @@ export default function FloorplanPanel({ svg }: Props) {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#333"
+            stroke="#555"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -25,7 +25,7 @@ export default function FloorplanPanel({ svg }: Props) {
             <path d="M3 9h18M9 21V9" />
           </svg>
         </div>
-        <p className="text-xs text-[#333] leading-relaxed">
+        <p className="text-xs text-[#555] leading-relaxed">
           Půdorys se zobrazí jakmile<br />popíšete místnosti
         </p>
       </div>

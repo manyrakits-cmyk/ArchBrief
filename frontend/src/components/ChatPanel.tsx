@@ -88,7 +88,7 @@ export default function ChatPanel({ messages, onSend, isLoading }: Props) {
             placeholder="Napište zprávu…"
             disabled={isLoading}
             className="flex-1 px-[14px] py-[10px] rounded-lg bg-[#111] border border-[#1E1E1E]
-              text-[13px] text-[#E8E8E8] placeholder-[#333] outline-none
+              text-[13px] text-[#E8E8E8] placeholder-[#555] outline-none
               focus:border-[#2A2A2A] disabled:opacity-50 transition-colors duration-150"
           />
           <button

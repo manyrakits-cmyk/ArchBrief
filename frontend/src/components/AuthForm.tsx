@@ -50,7 +50,7 @@ export default function AuthForm() {
         <h1 className="text-xl font-semibold text-[#E8E8E8] mb-1">
           {mode === 'login' ? 'Přihlásit se' : 'Vytvořit účet'}
         </h1>
-        <p className="text-sm text-[#444] mb-6">
+        <p className="text-sm text-[#666] mb-6">
           {mode === 'login'
             ? 'Pro přístup k vašim projektům'
             : 'Začněte svůj první projekt'}
@@ -73,7 +73,7 @@ export default function AuthForm() {
 
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 h-px bg-[#1E1E1E]" />
-          <span className="text-xs text-[#333]">nebo</span>
+          <span className="text-xs text-[#555]">nebo</span>
           <div className="flex-1 h-px bg-[#1E1E1E]" />
         </div>
 
@@ -115,7 +115,7 @@ export default function AuthForm() {
         </form>
 
         {/* Switch mode */}
-        <p className="text-xs text-center text-[#444] mt-4">
+        <p className="text-xs text-center text-[#666] mt-4">
           {mode === 'login' ? 'Nemáte účet? ' : 'Máte účet? '}
           <button
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setInfo(null) }}
