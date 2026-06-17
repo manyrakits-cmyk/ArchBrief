@@ -8,7 +8,7 @@ import ModelPanel from './components/ModelPanel'
 import ExportPage from './components/ExportPage'
 import { LogOut, ChevronLeft, Download } from 'lucide-react'
 
-const API = 'http://localhost:5000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 const LS_SESSION = 'archbrief_session_id'
 const LS_PROJECT_NAME = 'archbrief_project_name'
 

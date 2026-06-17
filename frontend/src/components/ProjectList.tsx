@@ -18,7 +18,7 @@ interface Props {
   onNewProject: (name: string) => void
 }
 
-const API = 'http://localhost:5000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('cs-CZ', {
