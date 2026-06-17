@@ -152,26 +152,26 @@ export default function ExportPage({
             <div className="space-y-1.5" style={bodyTextStyle}>
               {intent.primary_goal && (
                 <p><span style={{ color: '#777' }}>Primární cíl:</span>{' '}
-                  <span style={{ color: '#888' }}>{String(intent.primary_goal) as React.ReactNode}</span></p>
+                  <span style={{ color: '#888' }}>{intent.primary_goal}</span></p>
               )}
               {project.type && (
                 <p><span style={{ color: '#777' }}>Typ:</span>{' '}
-                  <span style={{ color: '#888' }}>{String(project.type) as React.ReactNode}</span></p>
+                  <span style={{ color: '#888' }}>{project.type}</span></p>
               )}
               {site.location && (
                 <p><span style={{ color: '#777' }}>Lokalita:</span>{' '}
-                  <span style={{ color: '#888' }}>{String(site.location) as React.ReactNode}</span></p>
+                  <span style={{ color: '#888' }}>{site.location}</span></p>
               )}
               {(style.keywords || style.atmosphere) && (
                 <p><span style={{ color: '#777' }}>Styl:</span>{' '}
                   <span style={{ color: '#888' }}>
-                    {([style.keywords, style.atmosphere].filter(Boolean).map(String).join(' — ')) as React.ReactNode}
+                    {[style.keywords, style.atmosphere].filter(Boolean).join(' — ')}
                   </span></p>
               )}
               {(budget.target || budget.max) && (
                 <p><span style={{ color: '#777' }}>Rozpočet:</span>{' '}
                   <span style={{ color: '#888' }}>
-                    {([budget.target, budget.max].filter(Boolean).map(String).join(' / max ')) as React.ReactNode}
+                    {[budget.target, budget.max].filter(Boolean).join(' / max ')}
                   </span></p>
               )}
               {!intent.primary_goal && !project.type && !site.location && (
