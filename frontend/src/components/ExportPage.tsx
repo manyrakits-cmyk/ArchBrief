@@ -39,13 +39,13 @@ export default function ExportPage({
 }: Props) {
   const [isDownloading, setIsDownloading] = useState(false)
 
-  const intent = (intentModel.intent as Record<string, unknown>) ?? {}
-  const project = (intentModel.project as Record<string, unknown>) ?? {}
-  const site = (intentModel.site as Record<string, unknown>) ?? {}
-  const style = (intentModel.style as Record<string, unknown>) ?? {}
-  const budget = (intentModel.budget as Record<string, unknown>) ?? {}
-  const program = (intentModel.program as Record<string, unknown>) ?? {}
-  const spaces = (program.spaces as unknown[]) ?? []
+  const intent = (intentModel.intent as any) ?? {}
+  const project = (intentModel.project as any) ?? {}
+  const site = (intentModel.site as any) ?? {}
+  const style = (intentModel.style as any) ?? {}
+  const budget = (intentModel.budget as any) ?? {}
+  const program = (intentModel.program as any) ?? {}
+  const spaces = (program.spaces as any[]) ?? []
   const today = new Date().toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })
 
   async function handleDownload() {
