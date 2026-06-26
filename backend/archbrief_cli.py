@@ -9,7 +9,7 @@ Požadavky:
     pip install anthropic
 
 Spuštění:
-    python archbrief_cli.py
+    python backend/archbrief_cli.py
 
 Ukončení:
     Napište 'quit' nebo 'hotovo'
