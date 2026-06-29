@@ -15,3 +15,6 @@ venv/
 
 # Node modules
 frontend/node_modules/
+
+.vercel
+supabase/.temp/
