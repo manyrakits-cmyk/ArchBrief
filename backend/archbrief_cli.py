@@ -57,11 +57,16 @@ EMPTY_MODEL: dict = {
         "spaces": [],
         "relationships": [],
     },
+    "building": {
+        "floors": None,      # počet nadzemních podlaží (1 = přízemní)
+        "roof_type": "",     # flat | gable | hip | shed | green | butterfly
+    },
     "constraints": {
         "max_area": None,
     },
     "style": {
         "keywords": [],
+        "materials": [],
         "atmosphere": "",
     },
     "budget": {
@@ -87,7 +92,9 @@ PRAVIDLA ROZHOVORU:
     velikost a počet místností
     prostorové vztahy a preference
     orientace, zahrada, terasa
-    styl a atmosféra
+    podlažnost a tvar střechy (přes srovnání: "dům v jedné úrovni, nebo s patrem?",
+      "plochá střecha, nebo klasická šikmá?")
+    styl, atmosféra a materiály (kámen, dřevo, beton, sklo, omítka…)
     rozpočet (orientačně)
     omezení a specifické požadavky
 - NESMÍŠ navrhovat konkrétní architektonická řešení
@@ -114,6 +121,9 @@ Výchozí hodnoty (m²): living: 30, kitchen: 15, bedroom: 16, bedroom_master: 2
 bathroom: 8, office: 14, dining: 18, terrace: 20
 
 Pro každou místnost zapiš do patche:
+- id: stabilní identifikátor ve snake_case anglicky (např. "living", "kitchen",
+  "bedroom_master", "guest_bathroom"); jednou přidělené id NIKDY neměň
+- name: český název
 - area_target: odvozené číslo (vždy, i když jen orientační odhad)
 - note: původní popis uživatele
 
@@ -126,8 +136,19 @@ FORMÁT KAŽDÉ ODPOVĚDI — vždy POUZE platný JSON objekt, bez markdown, bez
 PRAVIDLA PRO PATCH (intent_model_update):
 - Zapiš POUZE data z poslední zprávy uživatele
 - Nikdy neposílej celý model — jen změny
-- Listy (spaces, users, keywords, goals…) zasílej celé, pokud je aktualizuješ
+- program.spaces a program.relationships se slučují podle id: posílej jen NOVÉ
+  nebo ZMĚNĚNÉ prostory/vztahy. Prostory, které neuvedeš, v modelu zůstanou.
+  Změna existujícího prostoru = stejné id + jen měněná pole.
+- Prostory ani vztahy nelze přes patch smazat. Pokud uživatel něco ruší,
+  zapiš to do note daného prostoru nebo do conflicts[].
+- Vztahy: {"from": "<id prostoru>", "to": "<id prostoru>", "type": "direct|buffered|visual", "note": "..."}
+- building.floors: celé číslo nadzemních podlaží (1 = přízemní dům, 2 = s patrem);
+  building.roof_type: jedna z hodnot flat | gable | hip | shed | green | butterfly.
+  Zapiš jen to, co uživatel řekl — nedomýšlej.
+- style.materials: materiály česky, např. ["kámen", "sklo"]; style.keywords: styl a barvy
+- Ostatní listy (users, keywords, materials, goals…) zasílej celé, pokud je aktualizuješ
 - Konflikty přidávej do conflicts[] jako: {"description": "...", "fields": [...]}
+  (posílej jen nové konflikty, existující zůstávají)
 - Prázdný patch = {}
 """
 
@@ -157,6 +178,9 @@ def deep_merge(base: object, patch: object) -> object:
       dict + dict  → rekurzivní sloučení klíčů
       list/skalár  → patch nahradí celou hodnotu
       None v patch → původní hodnota zůstane (data se nesmažou)
+
+    Pozor: pole program.spaces, program.relationships a conflicts se tudy
+    nemergují — řeší je apply_patch podle id (viz _merge_list).
     """
     if patch is None:
         return base
@@ -174,13 +198,120 @@ def deep_merge(base: object, patch: object) -> object:
     return result
 
 
+def _norm(value: object) -> str:
+    """Normalizace klíče pro porovnání: malá písmena, bez okrajových a zdvojených mezer."""
+    return " ".join(str(value).strip().lower().split())
+
+
+def _as_list(value: object) -> list:
+    """Patch může omylem poslat jeden objekt místo pole — sjednotíme na list."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, (dict, str)):
+        return [value]
+    return []
+
+
+def _same_space(a: object, b: object) -> bool:
+    """Dva prostory jsou totožné, pokud mají stejné id, nebo (fallback pro starší data bez id) stejný název."""
+    if isinstance(a, str) or isinstance(b, str):
+        name_a = a if isinstance(a, str) else (a or {}).get("name") or (a or {}).get("id")
+        name_b = b if isinstance(b, str) else (b or {}).get("name") or (b or {}).get("id")
+        return bool(name_a) and bool(name_b) and _norm(name_a) == _norm(name_b)
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        return False
+    if a.get("id") and b.get("id"):
+        return _norm(a["id"]) == _norm(b["id"])
+    return bool(a.get("name")) and bool(b.get("name")) and _norm(a["name"]) == _norm(b["name"])
+
+
+def _same_relationship(a: object, b: object) -> bool:
+    """Vztah je totožný podle id, jinak podle dvojice prostorů (bez ohledu na směr)."""
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        return False
+    if a.get("id") and b.get("id"):
+        return _norm(a["id"]) == _norm(b["id"])
+    pair_a = {_norm(a.get("from") or ""), _norm(a.get("to") or "")}
+    pair_b = {_norm(b.get("from") or ""), _norm(b.get("to") or "")}
+    return "" not in pair_a and pair_a == pair_b
+
+
+def _same_conflict(a: object, b: object) -> bool:
+    if isinstance(a, dict) and isinstance(b, dict):
+        if a.get("id") and b.get("id"):
+            return _norm(a["id"]) == _norm(b["id"])
+        return bool(a.get("description")) and _norm(a.get("description")) == _norm(b.get("description") or "")
+    return _norm(a) == _norm(b)
+
+
+def _merge_list(existing: object, incoming: object, same, keep: tuple[str, ...] = ("id",)) -> list:
+    """
+    Merge pole podle identity prvku (funkce `same`).
+
+    - shodný prvek → deep_merge (nové hodnoty se zapíšou, None nic nesmaže),
+      identifikační pole z `keep` zůstanou původní (ID se nepřejmenovávají)
+    - nový prvek → přidá se na konec
+    - prvky, které v patchi nejsou, zůstávají — přes patch nelze mazat
+    """
+    result = deepcopy(existing) if isinstance(existing, list) else []
+    for item in _as_list(incoming):
+        if item is None:
+            continue
+        idx = next((i for i, cur in enumerate(result) if same(cur, item)), None)
+        if idx is None:
+            result.append(deepcopy(item))
+            continue
+        current = result[idx]
+        if isinstance(current, dict) and isinstance(item, dict):
+            merged = deep_merge(current, item)
+            for field in keep:
+                if current.get(field):
+                    merged[field] = current[field]
+            result[idx] = merged
+        elif isinstance(item, dict):
+            result[idx] = deepcopy(item)  # legacy string → plnohodnotný objekt
+    return result
+
+
 def apply_patch(model: dict, patch: dict) -> dict:
     """
     Aplikuje patch na model záměru. Vrací nový model — původní není modifikován.
 
+    Model Update Rule: program.spaces, program.relationships a conflicts se
+    mergují podle id (fallback název / dvojice prostorů / popis), nikdy se
+    nepřepisují ani nemažou. Ostatní části modelu řeší deep_merge.
+
     Připraveno pro import do server.py.
     """
-    return deep_merge(model, patch)  # type: ignore[return-value]
+    if not isinstance(patch, dict):
+        return deepcopy(model)
+
+    patch = deepcopy(patch)
+    program_patch = patch.get("program") if isinstance(patch.get("program"), dict) else None
+    spaces_patch = program_patch.pop("spaces", None) if program_patch is not None else None
+    rels_patch = program_patch.pop("relationships", None) if program_patch is not None else None
+    conflicts_patch = patch.pop("conflicts", None)
+
+    result: dict = deep_merge(model, patch)  # type: ignore[assignment]
+
+    if spaces_patch is not None or rels_patch is not None:
+        program = result.get("program")
+        if not isinstance(program, dict):
+            program = result["program"] = {}
+        if spaces_patch is not None:
+            program["spaces"] = _merge_list(program.get("spaces"), spaces_patch, _same_space)
+        if rels_patch is not None:
+            program["relationships"] = _merge_list(
+                program.get("relationships"), rels_patch, _same_relationship,
+                keep=("id", "from", "to"),
+            )
+
+    if conflicts_patch is not None:
+        result["conflicts"] = _merge_list(
+            result.get("conflicts"), conflicts_patch, _same_conflict, keep=("id", "description")
+        )
+
+    return result
 
 
 # ── Volání LLM ────────────────────────────────────────────────────────────────
