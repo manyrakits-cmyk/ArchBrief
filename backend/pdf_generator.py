@@ -23,6 +23,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     HRFlowable,
     Image,
@@ -45,7 +48,25 @@ PAGE_W, PAGE_H = A4
 MARGIN = 20 * mm
 CONTENT_W = PAGE_W - 2 * MARGIN
 
+# ── Fonty ──────────────────────────────────────────────────────────────────────
+# Standardní Helvetica/Courier nemají glyfy pro č, ř, ě, ů, ň, ť, ď → DejaVu (backend/fonts).
+
+_FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
+FONT = "DejaVuSans"
+FONT_BOLD = "DejaVuSans-Bold"
+FONT_MONO = "DejaVuSansMono"
+
+pdfmetrics.registerFont(TTFont(FONT, os.path.join(_FONT_DIR, "DejaVuSans.ttf")))
+pdfmetrics.registerFont(TTFont(FONT_BOLD, os.path.join(_FONT_DIR, "DejaVuSans-Bold.ttf")))
+pdfmetrics.registerFont(TTFont(FONT_MONO, os.path.join(_FONT_DIR, "DejaVuSansMono.ttf")))
+# <b> v Paragraph → tučný řez
+registerFontFamily(FONT, normal=FONT, bold=FONT_BOLD, italic=FONT, boldItalic=FONT_BOLD)
+
 ZONE_LABELS = {"public": "Veřejná", "shared": "Sdílená", "private": "Soukromá"}
+ROOF_LABELS = {
+    "flat": "plochá", "gable": "sedlová", "hip": "valbová",
+    "shed": "pultová", "green": "zelená (vegetační)", "butterfly": "motýlí",
+}
 REL_LABELS = {"direct": "Přímé", "buffered": "Oddělené", "visual": "Vizuální"}
 
 # ── Styly ──────────────────────────────────────────────────────────────────────
@@ -54,31 +75,31 @@ def _styles() -> dict:
     return {
         "title": ParagraphStyle(
             "title", fontSize=28, textColor=COLOR_GREEN,
-            spaceAfter=6, fontName="Helvetica-Bold",
+            spaceAfter=6, fontName=FONT_BOLD,
         ),
         "subtitle": ParagraphStyle(
             "subtitle", fontSize=14, textColor=COLOR_GRAY,
-            spaceAfter=4, fontName="Helvetica",
+            spaceAfter=4, fontName=FONT,
         ),
         "h2": ParagraphStyle(
             "h2", fontSize=14, textColor=COLOR_GREEN,
-            spaceBefore=10, spaceAfter=4, fontName="Helvetica-Bold",
+            spaceBefore=10, spaceAfter=4, fontName=FONT_BOLD,
         ),
         "body": ParagraphStyle(
             "body", fontSize=10, textColor=colors.black,
-            spaceAfter=3, leading=14, fontName="Helvetica",
+            spaceAfter=3, leading=14, fontName=FONT,
         ),
         "small": ParagraphStyle(
             "small", fontSize=8, textColor=COLOR_GRAY,
-            spaceAfter=2, fontName="Helvetica",
+            spaceAfter=2, fontName=FONT,
         ),
         "mono": ParagraphStyle(
-            "mono", fontSize=8, fontName="Courier",
+            "mono", fontSize=8, fontName=FONT_MONO,
             spaceAfter=0, leading=11, backColor=COLOR_MONO_BG,
         ),
         "label": ParagraphStyle(
             "label", fontSize=9, textColor=COLOR_GRAY,
-            fontName="Helvetica-Bold", spaceAfter=3,
+            fontName=FONT_BOLD, spaceAfter=3,
         ),
     }
 
@@ -97,6 +118,67 @@ def _safe_str(v) -> str:
                 parts.append(str(item))
         return "; ".join(parts) if parts else "—"
     return str(v)
+
+
+def _join_terms(v) -> str:
+    """Seznam výrazů (keywords, materiály) → „minimalismus, kámen, bílá"."""
+    if isinstance(v, str):
+        return v.strip() or "—"
+    if not isinstance(v, list):
+        return "—"
+    terms = [str(t).strip() for t in v if t is not None and str(t).strip()]
+    return ", ".join(terms) if terms else "—"
+
+
+def _format_money(value, currency: str = "CZK") -> str:
+    """
+    40000000 → „40 000 000 CZK" (oddělovač tisíců = nezlomitelná mezera).
+    Text, který není číslo („cca 40 mil."), se vrátí beze změny.
+    """
+    if value is None or value == "":
+        return ""
+    number = None
+    if isinstance(value, bool):
+        number = None
+    elif isinstance(value, (int, float)):
+        number = value
+    elif isinstance(value, str):
+        cleaned = value.replace(" ", "").replace(" ", "").replace(",", ".")
+        try:
+            number = float(cleaned)
+        except ValueError:
+            return value.strip()
+    if number is None:
+        return str(value)
+    formatted = f"{round(number):,}".replace(",", " ")
+    return f"{formatted} {currency}" if currency else formatted
+
+
+def _format_budget(budget: dict) -> str:
+    """„40 000 000 CZK (max 45 000 000 CZK)" / „max 45 000 000 CZK" / „40 000 000 CZK"."""
+    budget = budget or {}
+    raw_currency = budget.get("currency")
+    currency = raw_currency.strip() if isinstance(raw_currency, str) and raw_currency.strip() else "CZK"
+    target = _format_money(budget.get("target"), currency)
+    maximum = _format_money(budget.get("max"), currency)
+    if target and maximum:
+        return f"{target} (max {maximum})"
+    if maximum:
+        return f"max {maximum}"
+    return target or "—"
+
+
+def _format_building(building: dict) -> str:
+    """„1 podlaží, plochá střecha"."""
+    building = building or {}
+    parts = []
+    floors = building.get("floors")
+    if isinstance(floors, (int, float)) and not isinstance(floors, bool) and floors > 0:
+        parts.append(f"{floors:g} podlaží" if floors != 1 else "1 podlaží (přízemní)")
+    roof = (building.get("roof_type") or "").strip()
+    if roof:
+        parts.append(f"{ROOF_LABELS.get(roof.lower(), roof)} střecha")
+    return ", ".join(parts)
 
 
 def _download_image(url: str) -> bytes | None:
@@ -124,7 +206,7 @@ def _svg_to_drawing(svg_string: str):
 
 def _table_style(has_header: bool = True) -> TableStyle:
     cmds = [
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+        ("FONTNAME", (0, 0), (-1, -1), FONT),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("ROWBACKGROUNDS", (0, 1 if has_header else 0), (-1, -1),
          [colors.white, COLOR_GREEN_LIGHT]),
@@ -138,7 +220,7 @@ def _table_style(has_header: bool = True) -> TableStyle:
         cmds += [
             ("BACKGROUND", (0, 0), (-1, 0), COLOR_GREEN),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
         ]
     return TableStyle(cmds)
 
@@ -184,12 +266,20 @@ def _section_summary(story: list, intent_model: dict, s: dict) -> None:
         rows.append(("Parcela", f"{plot.get('width', '?')} × {plot.get('depth', '?')} m"))
     if users:
         rows.append(("Uživatelé", _safe_str(users)))
+    building_str = _format_building(m.get("building") or {})
+    if building_str:
+        rows.append(("Hmota", building_str))
     if style.get("keywords") or style.get("atmosphere"):
-        kw = _safe_str(style.get("keywords"))
+        kw = _join_terms(style.get("keywords"))
         atm = _safe_str(style.get("atmosphere"))
-        rows.append(("Styl", f"{kw} — {atm}" if atm != "—" else kw))
+        if kw == "—":
+            rows.append(("Styl", atm))
+        else:
+            rows.append(("Styl", f"{kw} — {atm}" if atm != "—" else kw))
+    if style.get("materials"):
+        rows.append(("Materiály", _join_terms(style.get("materials"))))
     if budget.get("target") or budget.get("max"):
-        rows.append(("Rozpočet", f"{_safe_str(budget.get('target'))} / max {_safe_str(budget.get('max'))}"))
+        rows.append(("Rozpočet", _format_budget(budget)))
     if conflicts:
         rows.append(("Konflikty", _safe_str(conflicts)))
 
@@ -256,7 +346,7 @@ def _section_floorplan(story: list, floorplan_svg: str | None, s: dict) -> None:
             ("BACKGROUND", (0, 0), (0, 0), color),
             ("GRID", (0, 0), (0, 0), 0.5, colors.HexColor("#CCCCCC")),
             ("FONTSIZE", (0, 0), (-1, -1), 8),
-            ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+            ("FONTNAME", (0, 0), (-1, -1), FONT),
             ("TOPPADDING", (0, 0), (-1, -1), 2),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
             ("LEFTPADDING", (1, 0), (1, 0), 4),
@@ -298,13 +388,18 @@ def _section_program(story: list, intent_model: dict, s: dict) -> None:
         story.append(Paragraph("Prostorové vztahy", s["label"]))
         header = [["Od", "Do", "Typ"]]
         rows = []
+        # vztahy odkazují na id prostorů → zobrazit název
+        names_by_id = {
+            str(sp["id"]): sp.get("name") or str(sp["id"])
+            for sp in spaces if isinstance(sp, dict) and sp.get("id")
+        }
         for rel in relationships:
             if not isinstance(rel, dict):
                 continue
             rel_type = (rel.get("type") or "").lower()
             rows.append([
-                rel.get("from") or "—",
-                rel.get("to") or "—",
+                names_by_id.get(str(rel.get("from")), rel.get("from")) or "—",
+                names_by_id.get(str(rel.get("to")), rel.get("to")) or "—",
                 REL_LABELS.get(rel_type, rel_type or "—"),
             ])
         if rows:

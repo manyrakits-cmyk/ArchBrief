@@ -28,6 +28,53 @@ function SectionLabel({ label }: { label: string }) {
   )
 }
 
+const numberFormat = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 })
+
+/** 40000000 → „40 000 000 CZK"; text, který není číslo, se vrátí beze změny. */
+function formatMoney(value: unknown, currency: string): string {
+  if (value === null || value === undefined || value === '') return ''
+  const num =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value.replace(/[\s ]/g, '').replace(',', '.'))
+        : NaN
+  if (!Number.isFinite(num)) return String(value).trim()
+  return `${numberFormat.format(num)} ${currency}`
+}
+
+function formatBudget(budget: any): string {
+  const currency = typeof budget?.currency === 'string' && budget.currency.trim() ? budget.currency.trim() : 'CZK'
+  const target = formatMoney(budget?.target, currency)
+  const max = formatMoney(budget?.max, currency)
+  if (target && max) return `${target} (max ${max})`
+  if (max) return `max ${max}`
+  return target
+}
+
+/** ['minimalismus', 'kámen'] → „minimalismus, kámen" */
+function joinTerms(value: unknown): string {
+  if (typeof value === 'string') return value.trim()
+  if (!Array.isArray(value)) return ''
+  return value.map((t) => String(t ?? '').trim()).filter(Boolean).join(', ')
+}
+
+const ROOF_LABELS: Record<string, string> = {
+  flat: 'plochá', gable: 'sedlová', hip: 'valbová',
+  shed: 'pultová', green: 'zelená (vegetační)', butterfly: 'motýlí',
+}
+
+function formatBuilding(building: any): string {
+  const parts: string[] = []
+  const floors = building?.floors
+  if (typeof floors === 'number' && floors > 0) {
+    parts.push(floors === 1 ? '1 podlaží (přízemní)' : `${floors} podlaží`)
+  }
+  const roof = typeof building?.roof_type === 'string' ? building.roof_type.trim() : ''
+  if (roof) parts.push(`${ROOF_LABELS[roof.toLowerCase()] ?? roof} střecha`)
+  return parts.join(', ')
+}
+
 export default function ExportPage({
   sessionId,
   projectName,
@@ -44,6 +91,10 @@ export default function ExportPage({
   const site = (intentModel.site as any) ?? {}
   const style = (intentModel.style as any) ?? {}
   const budget = (intentModel.budget as any) ?? {}
+  const styleText = [joinTerms(style.keywords), style.atmosphere].filter(Boolean).join(' — ')
+  const materialsText = joinTerms(style.materials)
+  const buildingText = formatBuilding((intentModel as any).building)
+  const budgetText = formatBudget(budget)
   const program = (intentModel.program as any) ?? {}
   const spaces = (program.spaces as any[]) ?? []
   const today = new Date().toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -162,17 +213,21 @@ export default function ExportPage({
                 <p><span style={{ color: '#777' }}>Lokalita:</span>{' '}
                   <span style={{ color: '#888' }}>{site.location}</span></p>
               )}
-              {(style.keywords || style.atmosphere) && (
-                <p><span style={{ color: '#777' }}>Styl:</span>{' '}
-                  <span style={{ color: '#888' }}>
-                    {[style.keywords, style.atmosphere].filter(Boolean).join(' — ')}
-                  </span></p>
+              {buildingText && (
+                <p><span style={{ color: '#777' }}>Hmota:</span>{' '}
+                  <span style={{ color: '#888' }}>{buildingText}</span></p>
               )}
-              {(budget.target || budget.max) && (
+              {styleText && (
+                <p><span style={{ color: '#777' }}>Styl:</span>{' '}
+                  <span style={{ color: '#888' }}>{styleText}</span></p>
+              )}
+              {materialsText && (
+                <p><span style={{ color: '#777' }}>Materiály:</span>{' '}
+                  <span style={{ color: '#888' }}>{materialsText}</span></p>
+              )}
+              {budgetText && (
                 <p><span style={{ color: '#777' }}>Rozpočet:</span>{' '}
-                  <span style={{ color: '#888' }}>
-                    {[budget.target, budget.max].filter(Boolean).join(' / max ')}
-                  </span></p>
+                  <span style={{ color: '#888' }}>{budgetText}</span></p>
               )}
               {!intent.primary_goal && !project.type && !site.location && (
                 <p style={{ color: '#777', fontStyle: 'italic' }}>Záměr zatím nebyl specifikován</p>
