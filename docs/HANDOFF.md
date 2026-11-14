@@ -45,6 +45,22 @@ Pravděpodobné příčiny pádů:
 - Supabase: ověřit, že projekt není pozastavený (free tier se po neaktivitě pauzuje) a že Google OAuth
   má v redirect URLs doménu Vercelu i `localhost:5173`.
 
+## Výsledek oživení (14. 11. 2026, večer)
+- Railway `meticulous-energy` redeploynut → `SUCCESS` (zatím `flask run`). Supabase obnoven z pauzy.
+- Otestováno na produkci (`arch-brief.vercel.app`): Google login ✅, seznam projektů ✅, otevření projektu ✅,
+  nová konverzace + patch modelu ✅, vizualizace přes fal.ai ✅, půdorys ✅, `/api/export-pdf` → 200 ✅.
+
+### Nalezené problémy pro demo (priorita)
+1. **Model ztrácí prostory.** Projekt „Nový dům v Garganu": agent v chatu shrnul celý dům (obývák, kuchyň,
+   ložnice, koupelny, technická místnost… + hostovská jednotka), ale v `program.spaces` jsou jen 3 prostory
+   hostovské jednotky (54 m²). Půdorys i PDF pak ukazují jen 54 m². Prověřit `apply_patch` (přepisuje pole
+   místo merge podle `id`?) a prompt v `archbrief_cli.py`, jestli agent posílá spaces v patchi.
+2. **Vizualizace neodpovídá stylu.** Styl „minimalismus, kámen, bílá, sklo, středomořská", ale druhá generace
+   dala dvoupatrový dům se sedlovou taškovou střechou. Zpřísnit prompt v `image_generator.py` (styl, střecha,
+   podlažnost z modelu) a zvážit fixní seed pro demo.
+3. **Formátování v PDF/exportu:** rozpočet `40000000` bez měny a oddělovačů (měna je v modelu `CZK`),
+   style keywords spojené bez mezer (`minimalismus,kámen,bílá,sklo`).
+
 ## Plán (v tomto pořadí)
 
 ### Fáze 1 — rozjet lokálně
