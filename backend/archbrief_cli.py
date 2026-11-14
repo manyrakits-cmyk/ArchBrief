@@ -57,11 +57,16 @@ EMPTY_MODEL: dict = {
         "spaces": [],
         "relationships": [],
     },
+    "building": {
+        "floors": None,      # počet nadzemních podlaží (1 = přízemní)
+        "roof_type": "",     # flat | gable | hip | shed | green | butterfly
+    },
     "constraints": {
         "max_area": None,
     },
     "style": {
         "keywords": [],
+        "materials": [],
         "atmosphere": "",
     },
     "budget": {
@@ -87,7 +92,9 @@ PRAVIDLA ROZHOVORU:
     velikost a počet místností
     prostorové vztahy a preference
     orientace, zahrada, terasa
-    styl a atmosféra
+    podlažnost a tvar střechy (přes srovnání: "dům v jedné úrovni, nebo s patrem?",
+      "plochá střecha, nebo klasická šikmá?")
+    styl, atmosféra a materiály (kámen, dřevo, beton, sklo, omítka…)
     rozpočet (orientačně)
     omezení a specifické požadavky
 - NESMÍŠ navrhovat konkrétní architektonická řešení
@@ -135,7 +142,11 @@ PRAVIDLA PRO PATCH (intent_model_update):
 - Prostory ani vztahy nelze přes patch smazat. Pokud uživatel něco ruší,
   zapiš to do note daného prostoru nebo do conflicts[].
 - Vztahy: {"from": "<id prostoru>", "to": "<id prostoru>", "type": "direct|buffered|visual", "note": "..."}
-- Ostatní listy (users, keywords, goals…) zasílej celé, pokud je aktualizuješ
+- building.floors: celé číslo nadzemních podlaží (1 = přízemní dům, 2 = s patrem);
+  building.roof_type: jedna z hodnot flat | gable | hip | shed | green | butterfly.
+  Zapiš jen to, co uživatel řekl — nedomýšlej.
+- style.materials: materiály česky, např. ["kámen", "sklo"]; style.keywords: styl a barvy
+- Ostatní listy (users, keywords, materials, goals…) zasílej celé, pokud je aktualizuješ
 - Konflikty přidávej do conflicts[] jako: {"description": "...", "fields": [...]}
   (posílej jen nové konflikty, existující zůstávají)
 - Prázdný patch = {}

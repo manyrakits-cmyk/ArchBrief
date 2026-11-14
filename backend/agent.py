@@ -18,7 +18,7 @@ import anthropic
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from archbrief_cli import EMPTY_MODEL, apply_patch, call_agent  # noqa: E402
 from supabase_client import get_supabase
-from image_generator import build_image_prompt, generate_image
+from image_generator import build_image_prompt, generate_image, image_seed
 
 _client = anthropic.Anthropic()
 _INIT_TRIGGER = "Zahájení rozhovoru. Představ se a polož první otázku."
@@ -187,7 +187,7 @@ def generate_and_save_image(session_id: str, reference_image_url: str | None = N
 
     # 2. Sestavit prompt a vygenerovat obrázek
     prompt = build_image_prompt(intent_model)
-    image_url = generate_image(prompt, reference_image_url)
+    image_url = generate_image(prompt, reference_image_url, seed=image_seed(session_id))
 
     # 3. Uložit výsledek do Supabase
     sb.table("sessions").update({
