@@ -181,26 +181,46 @@ class FloorplanLayout:
 def build_spatial_graph(intent_model: dict) -> tuple[list[dict], list[dict]]:
     """
     Sestaví spatial graph (nodes + edges) z intent_model.program.
-    Spaces mohou být dict {name, note, ...} nebo plain stringy.
+    Spaces mohou být dict {id, name, note, ...} nebo plain stringy.
+
+    Klíč uzlu je `id` prostoru, pokud ho má, jinak normalizovaný název
+    (starší data). Vztahy mohou odkazovat na id i na název.
     """
     program = (intent_model or {}).get("program") or {}
     raw_spaces = program.get("spaces") or []
     raw_relationships = program.get("relationships") or []
 
     nodes: list[dict] = []
+    aliases: dict[str, str] = {}   # id/název → klíč uzlu
     for space in raw_spaces:
         if isinstance(space, dict):
             raw_name = (space.get("name") or "").strip()
+            raw_id = str(space.get("id") or "").strip()
         else:
             raw_name = str(space).strip()
-        if not raw_name:
+            raw_id = ""
+        if not raw_name and not raw_id:
             continue
 
-        key = _normalize_key(raw_name)
-        display_name = ROOM_NAMES.get(key) or _capitalize_first(raw_name)
-        zone = ZONE_MAP.get(key) or _infer_zone(raw_name.lower())
+        name_key = _normalize_key(raw_name) if raw_name else ""
+        id_key = _normalize_key(raw_id) if raw_id else ""
+        key = id_key or name_key
 
-        area_target = DEFAULT_AREAS.get(key, 15.0)
+        if raw_name:
+            display_name = ROOM_NAMES.get(name_key) or _capitalize_first(raw_name)
+        else:
+            display_name = ROOM_NAMES.get(id_key) or _capitalize_first(raw_id)
+        zone = (
+            ZONE_MAP.get(name_key)
+            or ZONE_MAP.get(id_key)
+            or _infer_zone(f"{raw_name} {raw_id.replace('_', ' ')}".lower())
+        )
+
+        for alias in (id_key, name_key):
+            if alias:
+                aliases.setdefault(alias, key)
+
+        area_target = DEFAULT_AREAS.get(name_key, DEFAULT_AREAS.get(id_key, 15.0))
         area_specified = False
         if isinstance(space, dict):
             raw_area = space.get("area_target") or space.get("area")
@@ -213,7 +233,7 @@ def build_spatial_graph(intent_model: dict) -> tuple[list[dict], list[dict]]:
 
         nodes.append({
             "id": key,
-            "raw_name": raw_name,
+            "raw_name": raw_name or raw_id,
             "display_name": display_name,
             "zone": zone,
             "area_target": area_target,
@@ -240,9 +260,11 @@ def build_spatial_graph(intent_model: dict) -> tuple[list[dict], list[dict]]:
             continue
         if rel_type not in ("direct", "buffered", "visual"):
             rel_type = "buffered"   # české hodnoty → buffered
+        from_key = _normalize_key(from_raw)
+        to_key = _normalize_key(to_raw)
         edges.append({
-            "from": _normalize_key(from_raw),
-            "to":   _normalize_key(to_raw),
+            "from": aliases.get(from_key, from_key),
+            "to":   aliases.get(to_key, to_key),
             "type": rel_type,
         })
 
